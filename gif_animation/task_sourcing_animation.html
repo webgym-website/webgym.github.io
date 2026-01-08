@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGym Task Sourcing Animation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+        }
+
+        body {
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            gap: 0;
+            max-width: 1400px;
+            margin: 0 auto;
+            align-items: stretch;
+            background: white;
+            overflow: hidden;
+        }
+
+        .panel {
+            flex: 1;
+            border: 2px solid #333;
+            border-right: none;
+            padding: 15px;
+            background: white;
+            height: 420px;
+            box-sizing: border-box;
+            position: relative;
+            overflow: visible;
+        }
+
+        .panel:last-child {
+            border-right: 2px solid #333;
+        }
+
+        .panel h3 {
+            margin: 0 0 15px 0;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        .panel-content {
+            position: relative;
+            height: calc(100% - 60px);
+        }
+
+        /* Benchmarks */
+        .benchmark {
+            position: absolute;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            color: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            white-space: nowrap;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Spice elements */
+        .spice {
+            position: absolute;
+            opacity: 0;
+            transform: scale(0);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            width: 95%;
+            max-height: 380px;
+            object-fit: contain;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .spice.appear {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .spice.flying {
+            animation: flySpiceToPot 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            z-index: 100;
+        }
+
+        #task-decomp {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+        }
+
+        #task-decomp.appear {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        #eval-rubric {
+            top: 50%;
+            right: 50%;
+            transform: translate(50%, -50%) scale(0);
+        }
+
+        #eval-rubric.appear {
+            transform: translate(50%, -50%) scale(1);
+        }
+
+        .benchmark.hidden {
+            opacity: 0;
+        }
+
+        .benchmark.flying {
+            animation: flyToPot 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            z-index: 100;
+        }
+
+        @keyframes flyToPot {
+            0% {
+                transform: translate(0, 0) rotate(0deg) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) rotate(360deg) scale(0.2);
+                opacity: 0;
+            }
+        }
+
+        @keyframes flySpiceToPot {
+            0% {
+                transform: translate(var(--start-x), var(--start-y)) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0.1) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Pot (middle panel) */
+        .pot-container {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 200px;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .pot-container.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .pot {
+            width: 140px;
+            height: 160px;
+            position: relative;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.15));
+        }
+
+        .pot-body {
+            width: 120px;
+            height: 100px;
+            background: linear-gradient(to right, #505050, #707070, #505050);
+            border-radius: 0 0 35px 35px;
+            position: absolute;
+            bottom: 50px;
+            left: 10px;
+            border: 2px solid #303030;
+        }
+
+        .pot-rim {
+            width: 140px;
+            height: 20px;
+            background: linear-gradient(to bottom, #808080, #606060);
+            border-radius: 50%;
+            position: absolute;
+            top: 40px;
+            border: 2px solid #303030;
+            box-shadow: inset 0 -2px 4px rgba(0,0,0,0.3);
+        }
+
+        .pot-handle-left, .pot-handle-right {
+            width: 25px;
+            height: 35px;
+            border: 3px solid #404040;
+            border-radius: 50%;
+            position: absolute;
+            top: 45px;
+        }
+
+        .pot-handle-left {
+            left: -12px;
+            border-right: none;
+        }
+
+        .pot-handle-right {
+            right: -12px;
+            border-left: none;
+        }
+
+        /* Fire */
+        .fire {
+            position: absolute;
+            bottom: 45px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 50px;
+        }
+
+        .flame {
+            position: absolute;
+            bottom: 0;
+            width: 25px;
+            height: 35px;
+            background: linear-gradient(to top, #ff8800, #ffaa00, #ffdd00);
+            border-radius: 50% 50% 0 0;
+            animation: flicker 0.4s ease-in-out infinite alternate;
+            filter: blur(1px);
+        }
+
+        .flame:nth-child(1) { left: 2px; }
+        .flame:nth-child(2) { left: 22px; animation-delay: 0.15s; height: 40px; }
+        .flame:nth-child(3) { left: 42px; animation-delay: 0.3s; }
+
+        @keyframes flicker {
+            0% { transform: scaleY(1) scaleX(0.95); opacity: 0.9; }
+            100% { transform: scaleY(0.85) scaleX(1.05); opacity: 1; }
+        }
+
+        /* Bubbles */
+        .bubble {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.3));
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            bottom: 75px;
+            animation: rise 1.5s ease-in infinite;
+            opacity: 0;
+        }
+
+        @keyframes rise {
+            0% {
+                opacity: 0;
+                transform: translateY(0) scale(0.6);
+            }
+            30% {
+                opacity: 0.8;
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-80px) translateX(var(--drift, 0)) scale(1);
+            }
+        }
+
+        /* WebGym result */
+        .webgym-result {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            text-align: center;
+            opacity: 0;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .webgym-result.appear {
+            animation: popAndShine 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        }
+
+        @keyframes popAndShine {
+            0% {
+                transform: translate(-50%, -50%) scale(0) rotate(-180deg);
+                opacity: 0;
+            }
+            60% {
+                transform: translate(-50%, -50%) scale(1.1) rotate(10deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        .webgym-text {
+            font-size: 42px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+
+        .webgym-logo {
+            width: 50px;
+            height: 50px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+            mix-blend-mode: multiply;
+        }
+
+        .task-count {
+            font-size: 24px;
+            font-weight: 600;
+            color: #667eea;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .shine {
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            right: -20px;
+            bottom: -20px;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                rgba(255, 255, 255, 0.4) 50%,
+                transparent 100%);
+            animation: shine 1.5s ease-in-out;
+            pointer-events: none;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-150%); }
+            100% { transform: translateX(150%); }
+        }
+
+        /* Distribution figures */
+        .distribution-figure {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+        }
+
+        .distribution-figure.appear {
+            animation: fadeIn 0.8s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .distribution-figure h4 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .distribution-figure img {
+            max-width: 95%;
+            max-height: 95%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+        }
+
+        /* Spice labels */
+        .spice-label {
+            position: absolute;
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            white-space: nowrap;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .spice-label.appear {
+            opacity: 1;
+        }
+
+        #task-decomp-label {
+            top: calc(50% - 200px);
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        #eval-rubric-label {
+            top: calc(50% - 200px);
+            right: 50%;
+            transform: translateX(50%);
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .start-button, .reset-button {
+            padding: 12px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .start-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .start-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .reset-button {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .reset-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(240, 147, 251, 0.4);
+        }
+
+        /* Intro overlay */
+        .intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .intro-overlay.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .intro-text {
+            font-size: 72px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            animation: fadeIn 0.5s ease-in-out forwards;
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Intro overlay -->
+    <div class="intro-overlay" id="introOverlay">
+        <div class="intro-text">1. A Task Set with 300k Realistic Tasks</div>
+    </div>
+
+    <div class="controls">
+        <button class="start-button" onclick="startAnimation()">Start Animation</button>
+        <button class="reset-button" onclick="resetAnimation()">Reset</button>
+    </div>
+
+    <div class="container">
+        <!-- Left Panel: Benchmarks → Domain Distribution -->
+        <div class="panel">
+            <h3>Source Benchmarks</h3>
+            <div class="panel-content" id="left-panel">
+                <!-- Left side benchmarks -->
+                <div class="benchmark" id="bench-left-0" style="left: 20px; top: 40px;">InSTA-v3</div>
+                <div class="benchmark" id="bench-left-1" style="left: 50px; top: 100px;">PAE-WebVoyager</div>
+                <div class="benchmark" id="bench-left-2" style="left: 30px; top: 160px;">AgentSynth-Web</div>
+                <div class="benchmark" id="bench-left-3" style="left: 60px; top: 220px;">BrowseComp</div>
+                <div class="benchmark" id="bench-left-4" style="left: 40px; top: 280px;">TravelPlanner</div>
+
+                <!-- Spice element: Task Decomposition (convert PDF to PNG first) -->
+                <img src="../website/images/decomposition_illustration.png" alt="Task Decomposition" class="spice" id="task-decomp">
+                <div class="spice-label" id="task-decomp-label">Task Decomposition</div>
+
+                <!-- Domain distribution (hidden initially) -->
+                <div class="distribution-figure" id="domain-dist">
+                    <img src="../website/images/domain_sunburst.png" alt="Domain Distribution">
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Panel: Pot → WebGym -->
+        <div class="panel">
+            <h3>Unified Task Set</h3>
+            <div class="panel-content" id="middle-panel">
+                <!-- Pot with fire -->
+                <div class="pot-container" id="pot-container">
+                    <div class="pot">
+                        <div class="pot-rim"></div>
+                        <div class="pot-body" id="pot-body"></div>
+                        <div class="pot-handle-left"></div>
+                        <div class="pot-handle-right"></div>
+                    </div>
+                    <div class="fire">
+                        <div class="flame"></div>
+                        <div class="flame"></div>
+                        <div class="flame"></div>
+                    </div>
+                </div>
+
+                <!-- WebGym result (hidden initially) -->
+                <div class="webgym-result" id="webgym-result">
+                    <img src="../website/images/icon/webgym.png" alt="WebGym" class="webgym-logo">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                        <span class="webgym-text">WebGym</span>
+                        <span class="task-count">300K Tasks</span>
+                    </div>
+                    <div class="shine"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Benchmarks → Difficulty Distribution -->
+        <div class="panel">
+            <h3>Source Benchmarks</h3>
+            <div class="panel-content" id="right-panel">
+                <!-- Right side benchmarks -->
+                <div class="benchmark" id="bench-right-0" style="right: 20px; top: 60px;">Mind2Web-Live</div>
+                <div class="benchmark" id="bench-right-1" style="right: 50px; top: 120px;">Online Mind2Web</div>
+                <div class="benchmark" id="bench-right-2" style="right: 30px; top: 180px;">DeepShop</div>
+                <div class="benchmark" id="bench-right-3" style="right: 60px; top: 240px;">Mind2Web-2</div>
+                <div class="benchmark" id="bench-right-4" style="right: 40px; top: 300px;">GAIA-Web</div>
+
+                <!-- Spice element: Evaluation Rubric -->
+                <img src="../website/images/rubric_comparison.png" alt="Evaluation Rubric" class="spice" id="eval-rubric">
+                <div class="spice-label" id="eval-rubric-label">Evaluation Rubric</div>
+
+                <!-- Difficulty distribution (hidden initially) -->
+                <div class="distribution-figure" id="difficulty-dist">
+                    <img src="../website/images/difficulty_train_vs_ood.png" alt="Difficulty Distribution">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let animationRunning = false;
+
+        function resetAnimation() {
+            location.reload();
+        }
+
+        function startAnimation() {
+            if (animationRunning) return;
+            animationRunning = true;
+
+            // Show intro overlay
+            const introOverlay = document.getElementById('introOverlay');
+            introOverlay.classList.add('show');
+
+            // Start the actual animation after 2 seconds
+            setTimeout(() => {
+                introOverlay.classList.remove('show');
+                beginAnimation();
+            }, 2000);
+        }
+
+        function beginAnimation() {
+            // Reset everything
+            document.querySelectorAll('.benchmark').forEach(b => {
+                b.classList.remove('flying', 'hidden');
+                b.style.opacity = '1';
+            });
+            document.querySelector('#task-decomp').classList.remove('appear', 'flying');
+            document.querySelector('#eval-rubric').classList.remove('appear', 'flying');
+            document.querySelector('#task-decomp-label').classList.remove('appear');
+            document.querySelector('#eval-rubric-label').classList.remove('appear');
+            document.querySelector('#webgym-result').classList.remove('appear');
+            document.querySelector('#domain-dist').classList.remove('appear');
+            document.querySelector('#difficulty-dist').classList.remove('appear');
+            document.querySelectorAll('.bubble').forEach(b => b.remove());
+
+            // Update panel titles
+            document.querySelectorAll('.panel h3')[0].textContent = 'Source Benchmarks';
+            document.querySelectorAll('.panel h3')[2].textContent = 'Source Benchmarks';
+
+            // Phase 1: Benchmarks fly into pot (0-3s)
+            const leftBenchmarks = document.querySelectorAll('[id^="bench-left-"]');
+            const rightBenchmarks = document.querySelectorAll('[id^="bench-right-"]');
+
+            const middlePanelRect = document.getElementById('middle-panel').getBoundingClientRect();
+            const potContainer = document.getElementById('pot-container');
+            const potRect = potContainer.getBoundingClientRect();
+            const potCenter = {
+                x: potRect.left + potRect.width / 2,
+                y: potRect.top + potRect.height / 2
+            };
+
+            // Fly left benchmarks
+            leftBenchmarks.forEach((bench, index) => {
+                setTimeout(() => {
+                    const rect = bench.getBoundingClientRect();
+                    const benchCenter = {
+                        x: rect.left + rect.width / 2,
+                        y: rect.top + rect.height / 2
+                    };
+
+                    const dx = potCenter.x - benchCenter.x;
+                    const dy = potCenter.y - benchCenter.y;
+
+                    bench.style.setProperty('--tx', `${dx}px`);
+                    bench.style.setProperty('--ty', `${dy}px`);
+                    bench.classList.add('flying');
+                }, index * 250);
+            });
+
+            // Fly right benchmarks
+            rightBenchmarks.forEach((bench, index) => {
+                setTimeout(() => {
+                    const rect = bench.getBoundingClientRect();
+                    const benchCenter = {
+                        x: rect.left + rect.width / 2,
+                        y: rect.top + rect.height / 2
+                    };
+
+                    const dx = potCenter.x - benchCenter.x;
+                    const dy = potCenter.y - benchCenter.y;
+
+                    bench.style.setProperty('--tx', `${dx}px`);
+                    bench.style.setProperty('--ty', `${dy}px`);
+                    bench.classList.add('flying');
+                }, index * 250 + 125);
+            });
+
+            // Phase 2: Bubbling (2.5s onwards)
+            setTimeout(() => {
+                createBubbles();
+            }, 2500);
+
+            // Phase 3: Show spice images (3.5s) - DISPLAY FOR 2 SECONDS before flying
+            setTimeout(() => {
+                // Hide panel titles when spices appear
+                document.querySelectorAll('.panel h3')[0].textContent = '';
+                document.querySelectorAll('.panel h3')[2].textContent = '';
+
+                // Show spices with labels
+                document.querySelector('#task-decomp').classList.add('appear');
+                document.querySelector('#eval-rubric').classList.add('appear');
+                document.querySelector('#task-decomp-label').classList.add('appear');
+                document.querySelector('#eval-rubric-label').classList.add('appear');
+
+                // After 2 SECONDS of display, fly them into pot
+                setTimeout(() => {
+                    const taskDecomp = document.querySelector('#task-decomp');
+                    const evalRubric = document.querySelector('#eval-rubric');
+
+                    // Hide labels when flying
+                    document.querySelector('#task-decomp-label').classList.remove('appear');
+                    document.querySelector('#eval-rubric-label').classList.remove('appear');
+
+                    // Calculate positions for task decomp
+                    const tdRect = taskDecomp.getBoundingClientRect();
+                    const tdCenter = {
+                        x: tdRect.left + tdRect.width / 2,
+                        y: tdRect.top + tdRect.height / 2
+                    };
+                    const tdDx = potCenter.x - tdCenter.x;
+                    const tdDy = potCenter.y - tdCenter.y;
+
+                    // Set starting position and target for task decomp
+                    taskDecomp.style.setProperty('--start-x', '-50%');
+                    taskDecomp.style.setProperty('--start-y', '-50%');
+                    taskDecomp.style.setProperty('--tx', `calc(-50% + ${tdDx}px)`);
+                    taskDecomp.style.setProperty('--ty', `calc(-50% + ${tdDy}px)`);
+                    taskDecomp.classList.add('flying');
+
+                    // Calculate positions for eval rubric
+                    const erRect = evalRubric.getBoundingClientRect();
+                    const erCenter = {
+                        x: erRect.left + erRect.width / 2,
+                        y: erRect.top + erRect.height / 2
+                    };
+                    const erDx = potCenter.x - erCenter.x;
+                    const erDy = potCenter.y - erCenter.y;
+
+                    // Set starting position and target for eval rubric
+                    evalRubric.style.setProperty('--start-x', '50%');
+                    evalRubric.style.setProperty('--start-y', '-50%');
+                    evalRubric.style.setProperty('--tx', `calc(50% + ${erDx}px)`);
+                    evalRubric.style.setProperty('--ty', `calc(-50% + ${erDy}px)`);
+                    evalRubric.classList.add('flying');
+                }, 2000); // 2 second display time
+            }, 3500);
+
+            // Phase 4: Show WebGym (6.5s - after spices fly in: 3.5s + 2s display + 1s fly animation)
+            setTimeout(() => {
+                document.querySelector('#webgym-result').classList.add('appear');
+            }, 6500);
+
+            // Phase 5: Show distribution figures (8s)
+            setTimeout(() => {
+                // Update titles
+                document.querySelectorAll('.panel h3')[0].textContent = 'Domain Distribution';
+                document.querySelectorAll('.panel h3')[2].textContent = 'Difficulty Distribution';
+
+                document.querySelector('#domain-dist').classList.add('appear');
+                document.querySelector('#difficulty-dist').classList.add('appear');
+
+                setTimeout(() => {
+                    animationRunning = false;
+                }, 1000);
+            }, 8000);
+        }
+
+        function createBubbles() {
+            const potBody = document.getElementById('pot-body');
+            const bubbleCount = 15;
+
+            for (let i = 0; i < bubbleCount; i++) {
+                setTimeout(() => {
+                    const bubble = document.createElement('div');
+                    bubble.className = 'bubble';
+                    const leftPos = Math.random() * 100 + 10;
+                    bubble.style.left = `${leftPos}px`;
+                    bubble.style.setProperty('--drift', `${(Math.random() - 0.5) * 15}px`);
+                    bubble.style.animationDelay = `${Math.random() * 0.4}s`;
+                    bubble.style.animationDuration = `${1.3 + Math.random() * 0.5}s`;
+                    potBody.appendChild(bubble);
+                }, i * 100);
+            }
+        }
+    </script>
+</body>
+</html>

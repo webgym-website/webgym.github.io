@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Metrics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+        }
+
+        body {
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            gap: 0;
+            max-width: 1400px;
+            margin: 0 auto;
+            align-items: stretch;
+            background: white;
+        }
+
+        .panel {
+            flex: 1;
+            border: 2px solid #333;
+            border-right: none;
+            padding: 15px;
+            background: white;
+            height: 420px;
+            box-sizing: border-box;
+        }
+
+        .panel:last-child {
+            border-right: 2px solid #333;
+        }
+
+        .panel h3 {
+            margin: 0 0 15px 0;
+            font-size: 20px;
+            text-align: center;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 10px;
+            height: 350px;
+        }
+
+        .metric-card {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #f9f9f9;
+        }
+
+        .metric-card h4 {
+            margin: 0 0 8px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .metric-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #3273dc;
+            margin-bottom: 4px;
+        }
+
+        .metric-label {
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+        }
+
+        .resources-display {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .resource-group {
+            text-align: center;
+        }
+
+        .resource-title {
+            font-size: 9px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .cpu-grid {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+        }
+
+        .cpu-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .cpu-row {
+            display: flex;
+            gap: 1px;
+        }
+
+        .cpu-cell {
+            width: 4px;
+            height: 4px;
+            background-color: #2ca02c;
+            border-radius: 1px;
+        }
+
+        .gpu-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            align-items: center;
+        }
+
+        .gpu-row {
+            display: flex;
+            gap: 2px;
+        }
+
+        .gpu-cell {
+            width: 8px;
+            height: 8px;
+            background-color: #ff7f0e;
+            border-radius: 2px;
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 18px;
+            margin: 0 10px;
+            cursor: pointer;
+        }
+
+        /* Intro overlay */
+        .intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .intro-overlay.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .intro-text {
+            font-size: 72px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            animation: fadeIn 0.5s ease-in-out forwards;
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Intro overlay -->
+    <div class="intro-overlay" id="introOverlay">
+        <div class="intro-text">2. 4x Faster Rollout Framework</div>
+    </div>
+
+    <div class="controls">
+        <button onclick="startAnimation()">Start Animation</button>
+        <button onclick="resetAnimation()">Reset</button>
+    </div>
+
+    <div class="container">
+        <!-- Left Panel: Naive Throughput -->
+        <div class="panel">
+            <h3>Naive Implementation</h3>
+            <div class="chart-container">
+                <canvas id="naiveChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Middle Panel: WebGym Framework -->
+        <div class="panel">
+            <h3><i>WebGym</i> Framework</h3>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h4>Throughput</h4>
+                    <div class="metric-value">4-5×</div>
+                    <div class="metric-label">speedup vs. naive</div>
+                </div>
+                <div class="metric-card">
+                    <h4>Collection Rate</h4>
+                    <div class="metric-value">1,800</div>
+                    <div class="metric-label">trajectories in 30 min</div>
+                </div>
+                <div class="metric-card">
+                    <h4>Average Steps</h4>
+                    <div class="metric-value">13.2</div>
+                    <div class="metric-label">steps per trajectory</div>
+                </div>
+                <div class="metric-card">
+                    <h4>Resources</h4>
+                    <div class="metric-value" style="font-size: 24px; line-height: 1.4;">128 CPUs<br>24 H100 GPUs</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Our Implementation -->
+        <div class="panel">
+            <h3>Our Implementation (4x-5× Faster)</h3>
+            <div class="chart-container">
+                <canvas id="ourChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load performance curve data
+        let performanceCurveData = null;
+        let dataLoaded = false;
+        let naiveChart = null;
+        let ourChart = null;
+        let animationInterval = null;
+
+        function applyEMA(data, alpha = 0.5) {
+            if (data.length === 0) return data;
+            const smoothed = [data[0]];
+            for (let i = 1; i < data.length; i++) {
+                const smoothedValue = alpha * data[i] + (1 - alpha) * smoothed[i - 1];
+                smoothed.push(smoothedValue);
+            }
+            return smoothed;
+        }
+
+        // Interpolate data to 3× the number of points
+        function interpolate3x(data) {
+            if (data.length === 0) return data;
+            const interpolated = [];
+
+            for (let i = 0; i < data.length - 1; i++) {
+                const current = data[i];
+                const next = data[i + 1];
+
+                // Add current point
+                interpolated.push(current);
+
+                // Add two interpolated points between current and next
+                interpolated.push(current + (next - current) * (1/3));
+                interpolated.push(current + (next - current) * (2/3));
+            }
+
+            // Add the last point
+            interpolated.push(data[data.length - 1]);
+
+            return interpolated;
+        }
+
+        // Load actual performance curve data (same as flipcard)
+        fetch('../website/data/ablation_by_difficulty_cache.json')
+            .then(response => response.json())
+            .then(data => {
+                // Use "biased to hard" run, overall performance, smoothed data
+                if (data['biased to hard'] && data['biased to hard'].dirs_data.length > 0) {
+                    const rawData = data['biased to hard'].dirs_data[0].ood.avg;
+                    // Apply EMA smoothing (α=0.5) to match the displayed curves
+                    const smoothedData = applyEMA(rawData.slice(0, 20), 0.5);
+                    // Apply 3× interpolation
+                    performanceCurveData = interpolate3x(smoothedData);
+                } else {
+                    // Fallback to linear if data structure is unexpected
+                    const linearData = Array.from({length: 20}, (_, i) => 26.2 + i * 0.8);
+                    performanceCurveData = interpolate3x(linearData);
+                }
+                dataLoaded = true;
+                initializeCharts();
+            })
+            .catch(error => {
+                console.error('Error loading performance curve data:', error);
+                // Fallback to linear if data fails to load
+                const linearData = Array.from({length: 20}, (_, i) => 26.2 + i * 0.8);
+                performanceCurveData = interpolate3x(linearData);
+                dataLoaded = true;
+                initializeCharts();
+            });
+
+        function initializeCharts() {
+            if (!performanceCurveData) return;
+
+            const maxPoints = Math.min(20, performanceCurveData.length);
+            const labels = Array.from({length: maxPoints}, (_, i) => i);
+
+            // Common chart options
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                plugins: {
+                    legend: { display: false },
+                    title: { display: false }
+                },
+                scales: {
+                    y: {
+                        display: true,
+                        min: 20,
+                        max: 50,
+                        beginAtZero: false,
+                        title: {
+                            display: true,
+                            text: 'Success Rate (%)',
+                            font: { size: 16 }
+                        },
+                        ticks: { font: { size: 14 } }
+                    },
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Training Progress',
+                            font: { size: 16 }
+                        },
+                        ticks: { display: false }
+                    }
+                },
+                elements: {
+                    point: { radius: 0 },
+                    line: { tension: 0.4 }
+                }
+            };
+
+            // Initialize Naive chart with empty data
+            const ctxNaive = document.getElementById('naiveChart');
+            naiveChart = new Chart(ctxNaive, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: [],
+                        borderColor: '#999',
+                        backgroundColor: 'transparent',
+                        borderWidth: 3,
+                        fill: false,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: chartOptions
+            });
+
+            // Initialize Our chart with empty data
+            const ctxOur = document.getElementById('ourChart');
+            ourChart = new Chart(ctxOur, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: [],
+                        borderColor: '#3273dc',
+                        backgroundColor: 'transparent',
+                        borderWidth: 3,
+                        fill: false,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: chartOptions
+            });
+        }
+
+        function startAnimation() {
+            // Wait for data to load
+            if (!dataLoaded) {
+                setTimeout(startAnimation, 100);
+                return;
+            }
+
+            if (animationInterval) {
+                clearInterval(animationInterval);
+            }
+
+            // Show intro overlay
+            const introOverlay = document.getElementById('introOverlay');
+            introOverlay.classList.add('show');
+
+            // Start the actual animation after 2 seconds
+            setTimeout(() => {
+                introOverlay.classList.remove('show');
+                beginAnimation();
+            }, 2000);
+        }
+
+        function beginAnimation() {
+            // Reset charts
+            resetAnimation();
+
+            const maxPoints = Math.min(20, performanceCurveData.length);
+            let naiveIndex = 0;
+            let ourIndex = 0;
+
+            // Animation: add points progressively
+            // Naive adds 1 point per iteration
+            // Our implementation adds 4 points per iteration (4× faster)
+            animationInterval = setInterval(() => {
+                // Add 1 point to naive curve
+                if (naiveIndex < maxPoints) {
+                    naiveChart.data.datasets[0].data.push({
+                        x: naiveIndex,
+                        y: performanceCurveData[naiveIndex]
+                    });
+                    naiveIndex++;
+                    naiveChart.update('none');
+                }
+
+                // Add 4 points to "ours" curve (4× faster)
+                for (let i = 0; i < 4 && ourIndex < maxPoints; i++) {
+                    ourChart.data.datasets[0].data.push({
+                        x: ourIndex,
+                        y: performanceCurveData[ourIndex]
+                    });
+                    ourIndex++;
+                }
+                if (ourIndex <= maxPoints) {
+                    ourChart.update('none');
+                }
+
+                // Stop when both are complete
+                if (naiveIndex >= maxPoints && ourIndex >= maxPoints) {
+                    clearInterval(animationInterval);
+                    animationInterval = null;
+                }
+            }, 200); // 200ms per iteration
+        }
+
+        function resetAnimation() {
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+            }
+
+            // Clear chart data
+            if (naiveChart) {
+                naiveChart.data.datasets[0].data = [];
+                naiveChart.update('none');
+            }
+
+            if (ourChart) {
+                ourChart.data.datasets[0].data = [];
+                ourChart.update('none');
+            }
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            // Charts will be initialized when data loads
+        });
+    </script>
+</body>
+</html>

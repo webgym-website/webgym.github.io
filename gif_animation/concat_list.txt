@@ -1,0 +1,3 @@
+file 'gif_taskset.gif'
+file 'gif_framework.gif'
+file 'gif_scaling.gif'

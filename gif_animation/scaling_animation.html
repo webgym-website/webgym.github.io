@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scaling Animation</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+        }
+
+        body {
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            gap: 0;
+            max-width: 1400px;
+            margin: 0 auto;
+            align-items: stretch;
+            background: white;
+        }
+
+        .panel {
+            flex: 1;
+            border: 2px solid #333;
+            border-right: none;
+            padding: 15px;
+            background: white;
+            height: 420px;
+            box-sizing: border-box;
+        }
+
+        .panel:last-child {
+            border-right: 2px solid #333;
+        }
+
+        .panel h3 {
+            margin: 0 0 15px 0;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        #bar-chart-container {
+            position: relative;
+            height: 350px;
+        }
+
+        #line-chart-container {
+            position: relative;
+            height: 350px;
+        }
+
+        .table-container {
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 18px;
+        }
+
+        table th {
+            background: #f5f5f5;
+            padding: 8px 6px;
+            text-align: left;
+            border-bottom: 2px solid #333;
+            font-weight: 600;
+            font-size: 20px;
+        }
+
+        table td {
+            padding: 8px 6px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            animation: highlight-fade 1s ease-in-out;
+        }
+
+        @keyframes highlight-fade {
+            from { background: #fff3cd; }
+            to { background: white; }
+        }
+
+        .baseline-row { color: #666; }
+        .breadth-row { color: #dc3545; }
+        .size-row { color: #fd7e14; }
+        .depth-row { color: #0d6efd; }
+        .horizon-row { color: #198754; }
+
+        .bold-row {
+            font-weight: bold;
+        }
+
+        .normal-row {
+            font-weight: normal;
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 0 10px;
+            cursor: pointer;
+        }
+
+        /* Intro overlay */
+        .intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .intro-overlay.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .intro-text {
+            font-size: 72px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            animation: fadeIn 0.5s ease-in-out forwards;
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Intro overlay -->
+    <div class="intro-overlay" id="introOverlay">
+        <div class="intro-text">3. Scaling Performance with WebGym</div>
+    </div>
+
+    <div class="controls">
+        <button onclick="startAnimation()">Start Animation</button>
+        <button onclick="resetAnimation()">Reset</button>
+    </div>
+
+    <div class="container">
+        <!-- Left Panel: Bar Chart -->
+        <div class="panel">
+            <h3>Scaling Overview</h3>
+            <div id="bar-chart-container">
+                <canvas id="barChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Middle Panel: Line Charts -->
+        <div class="panel">
+            <h3>Performance Curves</h3>
+            <div id="line-chart-container">
+                <canvas id="lineChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Right Panel: Table -->
+        <div class="panel">
+            <h3>Results Summary</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Scaling</th>
+                            <th>Peak (%)</th>
+                            <th>Δ (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data definitions
+        const scalingSteps = [
+            { name: 'Baseline', legend: 'Exclude Domains', peak: null, delta: '--', color: '#666', class: 'baseline-row', dataKey: 'exclude domains' },
+            { name: '+Breadth', legend: 'Biased to Hard', peak: null, delta: null, color: '#dc3545', class: 'breadth-row', dataKey: 'biased to hard' },
+            { name: '+Size', legend: 'Only Easy', peak: null, delta: null, color: '#fd7e14', class: 'size-row', dataKey: 'only easy' },
+            { name: '+Depth', legend: 'Uniform Sampling', peak: null, delta: null, color: '#0d6efd', class: 'depth-row', dataKey: 'uniform sampling' },
+            { name: '+Horizon Control', legend: 'Shorten Horizon', peak: null, delta: null, color: '#198754', class: 'horizon-row', dataKey: 'shorten horizon' }
+        ];
+
+        // Will be loaded from actual data
+        let curveData = [];
+        let dataLoaded = false;
+
+        // Load actual performance curve data
+        fetch('../website/data/ablation_by_difficulty_cache.json')
+            .then(response => response.json())
+            .then(data => {
+                // Calculate actual peak values from data (same logic as website)
+                scalingSteps.forEach((step, index) => {
+                    const runData = data[step.dataKey];
+                    if (runData && runData.dirs_data && runData.dirs_data.length > 0) {
+                        // Handle merged runs for "biased to hard" - average raw data from both runs
+                        if (step.dataKey === 'biased to hard' && runData.dirs_data.length >= 2) {
+                            const rawData1 = runData.dirs_data[0].ood.avg;
+                            const rawData2 = runData.dirs_data[1].ood.avg;
+                            const minLen = Math.min(rawData1.length, rawData2.length);
+                            const avgData = [];
+                            for (let i = 0; i < minLen; i++) {
+                                avgData.push((rawData1[i] + rawData2[i]) / 2);
+                            }
+                            step.peak = Math.max(...avgData);
+                        } else {
+                            const rawData = runData.dirs_data[0].ood.avg;
+                            step.peak = Math.max(...rawData);
+                        }
+
+                        // Calculate delta
+                        if (index > 0) {
+                            const prevPeak = scalingSteps[index - 1].peak;
+                            step.delta = '+' + (step.peak - prevPeak).toFixed(1);
+                        }
+                    }
+                });
+
+                // Generate curve data with smoothing and normalization
+                const referenceStart = 26.2; // Normalize all curves to start at this value
+                curveData = scalingSteps.map(step => {
+                    const runData = data[step.dataKey];
+                    if (runData && runData.dirs_data && runData.dirs_data.length > 0) {
+                        // Handle merged runs for "biased to hard" - average raw data from both runs
+                        let rawData;
+                        if (step.dataKey === 'biased to hard' && runData.dirs_data.length >= 2) {
+                            const rawData1 = runData.dirs_data[0].ood.avg.slice(0, 8);
+                            const rawData2 = runData.dirs_data[1].ood.avg.slice(0, 8);
+                            const minLen = Math.min(rawData1.length, rawData2.length);
+                            rawData = [];
+                            for (let i = 0; i < minLen; i++) {
+                                rawData.push((rawData1[i] + rawData2[i]) / 2);
+                            }
+                        } else {
+                            rawData = runData.dirs_data[0].ood.avg.slice(0, 8);
+                        }
+
+                        // Normalize first value to reference start (same as website)
+                        if (rawData.length > 0) {
+                            rawData[0] = referenceStart;
+                        }
+
+                        const smoothedData = applyEMA(rawData, 0.5);
+
+                        return {
+                            label: step.legend,
+                            data: smoothedData,
+                            borderColor: step.color,
+                            backgroundColor: step.color,
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            tension: 0.3
+                        };
+                    }
+                    return null;
+                }).filter(d => d !== null);
+
+                dataLoaded = true;
+            })
+            .catch(error => {
+                console.error('Error loading ablation data:', error);
+                // Fallback to synthetic data
+                curveData = scalingSteps.map(step => ({
+                    label: step.legend,
+                    data: generateCurve(step.peak),
+                    borderColor: step.color,
+                    backgroundColor: step.color,
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.3
+                }));
+                dataLoaded = true;
+            });
+
+        // Apply EMA smoothing (same as in main website)
+        function applyEMA(data, alpha) {
+            if (!data || data.length === 0) return [];
+            const smoothed = [data[0]];
+            for (let i = 1; i < data.length; i++) {
+                smoothed.push(alpha * data[i] + (1 - alpha) * smoothed[i - 1]);
+            }
+            return smoothed;
+        }
+
+        // Fallback synthetic curve generator
+        function generateCurve(peakValue) {
+            const points = [];
+            const baseStart = 26;
+            const range = peakValue - baseStart;
+            for (let i = 0; i < 50; i++) {
+                const progress = i / 49;
+                // Sigmoid-like curve
+                const value = baseStart + range * (1 / (1 + Math.exp(-10 * (progress - 0.5))));
+                points.push(value);
+            }
+            return points;
+        }
+
+        // Chart instances
+        let barChart = null;
+        let lineChart = null;
+        let currentStep = 0;
+        let animationInterval = null;
+
+        function initializeCharts() {
+            // Overview curve chart (left panel) - will add segments dynamically
+            const ctxBar = document.getElementById('barChart').getContext('2d');
+            barChart = new Chart(ctxBar, {
+                type: 'line',
+                data: {
+                    labels: scalingSteps.map(s => s.name),
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 28,
+                            max: 45,
+                            title: {
+                                display: true,
+                                text: 'Peak Performance (%)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: { size: 10 }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Line chart
+            const ctxLine = document.getElementById('lineChart').getContext('2d');
+            lineChart = new Chart(ctxLine, {
+                type: 'line',
+                data: {
+                    labels: [], // Will be set dynamically based on data length
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: { size: 10 },
+                                boxWidth: 15,
+                                usePointStyle: false,
+                                useBorderRadius: true,
+                                borderRadius: 2
+                            }
+                        },
+                        title: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 26,
+                            max: 44,
+                            title: {
+                                display: true,
+                                text: 'Success Rate (%)'
+                            }
+                        },
+                        x: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        function addStep(stepIndex) {
+            if (stepIndex >= scalingSteps.length) {
+                clearInterval(animationInterval);
+                return;
+            }
+
+            const step = scalingSteps[stepIndex];
+
+            // Add line segment to overview curve
+            // Each segment connects from previous point to current point, colored by current step
+            if (stepIndex === 0) {
+                // First point - just add the point
+                const dataPoints = Array(scalingSteps.length).fill(null);
+                dataPoints[0] = step.peak;
+                barChart.data.datasets.push({
+                    data: dataPoints,
+                    borderColor: step.color,
+                    backgroundColor: 'transparent',
+                    borderWidth: 3,
+                    pointRadius: [6, 0, 0, 0, 0],
+                    pointBackgroundColor: step.color,
+                    pointBorderColor: step.color,
+                    pointBorderWidth: 2,
+                    tension: 0.3,
+                    fill: false
+                });
+            } else {
+                // Add segment from previous to current
+                const dataPoints = Array(scalingSteps.length).fill(null);
+                dataPoints[stepIndex - 1] = scalingSteps[stepIndex - 1].peak;
+                dataPoints[stepIndex] = step.peak;
+
+                const pointRadii = Array(scalingSteps.length).fill(0);
+                pointRadii[stepIndex] = 6;
+
+                barChart.data.datasets.push({
+                    data: dataPoints,
+                    borderColor: step.color,
+                    backgroundColor: 'transparent',
+                    borderWidth: 3,
+                    pointRadius: pointRadii,
+                    pointBackgroundColor: step.color,
+                    pointBorderColor: step.color,
+                    pointBorderWidth: 2,
+                    tension: 0.3,
+                    fill: false
+                });
+            }
+            barChart.update('none');
+
+            // Add line curve
+            if (lineChart.data.labels.length === 0 && curveData.length > 0 && curveData[stepIndex]) {
+                // Set labels based on data length on first curve
+                const dataLength = curveData[stepIndex].data.length;
+                lineChart.data.labels = Array.from({length: dataLength}, (_, i) => '');
+            }
+
+            // Make all previous curves normal width
+            lineChart.data.datasets.forEach(dataset => {
+                dataset.borderWidth = 2;
+            });
+
+            // Add new curve with bold width
+            const newCurve = {...curveData[stepIndex]};
+            newCurve.borderWidth = 4; // Bold for current curve
+            lineChart.data.datasets.push(newCurve);
+            lineChart.update('none');
+
+            // Add table row
+            const tableBody = document.getElementById('tableBody');
+            const row = document.createElement('tr');
+            row.className = step.class + ' highlight bold-row';
+            row.innerHTML = `
+                <td><strong>${step.name}</strong></td>
+                <td>${step.peak.toFixed(1)}</td>
+                <td>${step.delta}</td>
+            `;
+            tableBody.appendChild(row);
+
+            // Make previous rows normal weight
+            const allRows = tableBody.querySelectorAll('tr');
+            allRows.forEach((r, idx) => {
+                if (idx < allRows.length - 1) {
+                    r.classList.remove('bold-row');
+                    r.classList.add('normal-row');
+                }
+            });
+
+            currentStep++;
+        }
+
+        function startAnimation() {
+            // Wait for data to load
+            if (!dataLoaded) {
+                setTimeout(startAnimation, 100);
+                return;
+            }
+
+            if (animationInterval) {
+                clearInterval(animationInterval);
+            }
+
+            // Show intro overlay
+            const introOverlay = document.getElementById('introOverlay');
+            introOverlay.classList.add('show');
+
+            // Start the actual animation after 2 seconds
+            setTimeout(() => {
+                introOverlay.classList.remove('show');
+                beginAnimation();
+            }, 2000);
+        }
+
+        function beginAnimation() {
+            resetAnimation();
+
+            // Add first step immediately
+            addStep(0);
+
+            // Then add remaining steps with delay
+            let step = 1;
+            animationInterval = setInterval(() => {
+                if (step < scalingSteps.length) {
+                    addStep(step);
+                    step++;
+                } else {
+                    clearInterval(animationInterval);
+                }
+            }, 1500); // 1.5 seconds between steps
+        }
+
+        function resetAnimation() {
+            if (animationInterval) {
+                clearInterval(animationInterval);
+            }
+
+            currentStep = 0;
+
+            // Reset overview curve
+            barChart.data.datasets = [];
+            barChart.update('none');
+
+            // Reset line chart
+            lineChart.data.datasets = [];
+            lineChart.update('none');
+
+            // Reset table
+            document.getElementById('tableBody').innerHTML = '';
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            initializeCharts();
+        });
+    </script>
+</body>
+</html>

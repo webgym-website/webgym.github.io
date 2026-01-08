@@ -1,0 +1,2084 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>WebGym: Scaling Training Environments for Visual Web Agents</title>
+    <link rel="icon" href="website/images/icon/webgym.png" type="image/icon type">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+
+    <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+    <link rel="stylesheet" href="website/css/bulma.min.css">
+    <link rel="stylesheet" href="website/css/bulma-carousel.min.css">
+    <link rel="stylesheet" href="website/css/bulma-slider.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="./website/javascript/bulma-carousel.min.js"></script>
+    <script src="./website/javascript/bulma-slider.min.js"></script>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+        crossorigin="anonymous"></script>
+
+    <link href="https://unpkg.com/tabulator-tables@5.5.2/dist/css/tabulator_bootstrap4.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.5.2/dist/js/tabulator.min.js"></script>
+
+    <script src="website/javascript/benchmark_table.js" type="module"></script>
+    <script src="website/javascript/success_rate_vs_k_vis.js" type="module"></script>
+    <script src="website/javascript/success_rate_vs_k_vis2.js" type="module"></script>
+    <script src="website/javascript/feedback_success_rate_vis.js" type="module"></script>
+    <script src="website/javascript/feedback_provider_efficacy.js" type="module"></script>
+    <script src="website/javascript/demos.js" type="module"></script>
+
+    <link rel="stylesheet" href="website/css/index.css">
+
+    <style>
+        /* Remove dashes from tab list items */
+        .tabs.is-boxed li::before,
+        .tabs.is-toggle li::before {
+            content: none !important;
+            display: none !important;
+        }
+
+        /* Flip card styles */
+        .flip-card {
+            background-color: transparent;
+            perspective: 1000px;
+            height: 200px;
+        }
+
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .flip-card:hover .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .flip-card-front {
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .flip-card-front .title {
+            margin-top: 0 !important;
+            margin-bottom: 10px !important;
+        }
+
+        .flip-card-back {
+            background-color: #ffffff;
+            transform: rotateY(180deg);
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Content transition animation for tab switching */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .fade-out {
+            animation: fadeOut 0.2s ease-out;
+        }
+
+        /* Task figure tab styles */
+        .task-figure {
+            display: none;
+        }
+
+        .task-figure.is-active {
+            display: block;
+        }
+    </style>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-C7GJ4FYMY9"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-C7GJ4FYMY9');
+
+    </script>
+
+</head>
+
+<body>
+
+    <section class="hero">
+        <div class="hero-body">
+            <div class="container is-max-desktop">
+                <div class="columns is-centered">
+                    <div class="column has-text-centered">
+                        <h1 class="title publication-title">
+                            <img src="website/images/icon/webgym.png" alt="WebGym logo" width="50" height="50" />
+                            WebGym: Scaling Training Environments for Visual Web Agents with Realistic Tasks
+                        </h1>
+                        <div class="is-size-5 publication-authors">
+                            <span class="author-block">
+                                <a href="https://www.jackgethome.com/">Hao Bai</a><sup>1,2*</sup>,
+                            </span>
+                            <span class="author-block">
+                                <a href="https://www.microsoft.com/en-us/research/people/ataymano/">Alexey Taymanov</a><sup>1</sup>,
+                            </span>
+                            <span class="author-block">
+                                <a href="https://tongzhang-ml.org/">Tong Zhang</a><sup>2</sup>,
+                            </span>
+                            <br>
+                            <span class="author-block">
+                                <a href="https://aviralkumar2907.github.io/">Aviral Kumar</a><sup>3</sup>,
+                            </span>
+                            <span class="author-block">
+                                <a href="https://www.spencerwhitehead.com/">Spencer Whitehead</a><sup>1</sup>
+                            </span>
+                        </div>
+
+                        <div class="is-size-5 publication-authors" style="display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;">
+                            <span class="author-block" style="display: flex; align-items: center; gap: 5px;">
+                                <sup>1</sup>
+                                <img src="website/images/logos/ms-logo.png" alt="Microsoft" style="height: 20px; vertical-align: middle;">
+                                Microsoft
+                            </span>
+                            <span class="author-block" style="display: flex; align-items: center; gap: 5px;">
+                                <sup>2</sup>
+                                <img src="website/images/logos/uiuc.png" alt="UIUC" style="height: 20px; vertical-align: middle;">
+                                UIUC
+                            </span>
+                            <span class="author-block" style="display: flex; align-items: center; gap: 5px;">
+                                <sup>3</sup>
+                                <img src="website/images/logos/cmu_square.png" alt="CMU" style="height: 20px; vertical-align: middle;">
+                                CMU
+                            </span>
+                        </div>
+
+                        <div class="is-size-5 publication-authors">
+                            <span class="author-block"><small>*Work partly done during internship at Microsoft</small></span>
+                        </div>
+
+                        <div class="column has-text-centered">
+                            <div class="publication-links">
+                                <!-- PDF Link. -->
+                                <span class="link-block">
+                                    <a href="https://arxiv.org/abs/2601.02439" class="btn btn-outline-dark"
+                                        role="button" target="_blank">&#128221;
+                                        Paper</a> &nbsp;&nbsp;
+                                </span>
+                                <!-- Data Link. -->
+                                <span class="link-block">
+                                    <a href="#" class="btn btn-outline-dark"
+                                        role="button">&#128190;
+                                        Data (Coming Soon)</a> &nbsp;&nbsp;
+                                </span>
+                                <!-- Code Link. -->
+                                <span class="link-block">
+                                    <a href="#" class="btn btn-outline-dark"
+                                        role="button">&#128187;
+                                        Code (Coming Soon)</a> &nbsp;&nbsp;
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo GIF -->
+    <section class="section" id="demo-gif">
+        <div class="container is-max-desktop">
+            <h2 class="title is-3 has-text-centered">Recipe Overview 🧑‍🍳</h2>
+            <div class="is-centered has-text-centered">
+                <img src="gif_animation/gif.gif" alt="WebGym Demo" style="width:100%; max-width:1200px;">
+            </div>
+        </div>
+    </section>
+
+    <!-- Teaser Figure -->
+    <section class="section" id="teaser">
+        <div class="container is-max-desktop">
+            <h2 class="title is-3 has-text-centered">Demo</h2>
+            <div class="is-centered has-text-centered">
+                <img src="website/images/teaser.png" alt="WebGym Teaser" style="width:100%; max-width:1200px;">
+                <p class="mt-3 has-text-justified">
+                    <strong>Example rollouts from visual web agents trained on different training environments.</strong>
+                    Tasks in prior large-scale training setups were relatively simple, e.g., Test-Time-Interaction (TTI),
+                    resulting in failures of trained agents on many held-out tasks. We build WebGym, a significantly larger
+                    training environment supporting harder and more diverse tasks, totaling nearly 300k tasks (3× the size of TTI),
+                    and train an agent via online reinforcement learning to acquire more generalizable skills.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="abstract">
+        <div class="container is-max-desktop">
+            <!-- Abstract. -->
+            <div class="columns is-centered has-text-centered">
+                <div class="column is-four-fifths">
+                    <h2 class="title is-3">Abstract</h2>
+                    <div class="content has-text-justified">
+                        <p>
+                            We present <em>WebGym</em>, the <strong>largest-to-date open-source environment</strong> for training realistic visual web agents.
+                            Real websites are non-stationary and diverse, making artificial or small-scale task sets insufficient for robust policy learning.
+                            WebGym contains <strong>nearly 300,000 tasks</strong> with <strong>rubric-based evaluations</strong> across diverse, real-world websites and difficulty levels.
+                            We train agents with a simple <strong>reinforcement learning (RL)</strong> recipe, which trains on the agent's own interaction traces (rollouts),
+                            using task rewards as feedback to guide learning. To enable scaling RL, we speed up sampling of trajectories in WebGym by developing
+                            a <strong>high-throughput asynchronous rollout system</strong>, designed specifically for web agents. Our system achieves a <strong>4-5× rollout speedup</strong>
+                            compared to naive implementations. Second, we <strong>scale the task set breadth, depth, and size</strong>, which results in continued performance improvement.
+                            Fine-tuning a strong base vision-language model, <em>Qwen-3-VL-8B-Instruct</em>, on WebGym results in an improvement in success rate
+                            on an <strong>out-of-distribution test set from 26.2% to 42.9%</strong>, significantly outperforming agents based on proprietary models such as
+                            GPT-4o and GPT-5-Thinking that achieve 27.1% and 29.8%, respectively. This improvement is substantial because our test set consists
+                            only of tasks on websites <strong>never seen during training</strong>, unlike many other prior works on training visual web agents.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Task Set Section -->
+    <section class="section" id="task-set">
+        <div class="container is-max-desktop">
+            <div class="columns is-centered">
+                <div class="column is-full">
+                    <h2 class="title is-3 has-text-centered">Tasks in WebGym</h2>
+                    <div class="content has-text-justified">
+                        <p>
+                            Training with online RL requires a large number of model-generated rollouts guided by reliable reward signals.
+                            To learn generalizable policies, the task set must (1) span diverse domains and websites, (2) cover a range of difficulties
+                            from atomic to compositional tasks, and (3) include verifiable evaluators that translate outcomes into meaningful learning signals.
+                        </p>
+
+                        <h3 class="title is-4 mt-5">Task Sourcing Statistics</h3>
+                        <div class="table-container">
+                            <table class="table is-striped is-hoverable is-fullwidth">
+                                <thead>
+                                    <tr>
+                                        <th>Source Task Set</th>
+                                        <th>Difficulties</th>
+                                        <th># Websites</th>
+                                        <th># Tasks</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>InSTA-v3</td>
+                                        <td>✗</td>
+                                        <td>146,348</td>
+                                        <td>146,441</td>
+                                    </tr>
+                                    <tr>
+                                        <td>PAE-WebVoyager</td>
+                                        <td>✗</td>
+                                        <td>13</td>
+                                        <td>128,499</td>
+                                    </tr>
+                                    <tr>
+                                        <td>AgentSynth-Web</td>
+                                        <td>✓</td>
+                                        <td>328</td>
+                                        <td>2,086</td>
+                                    </tr>
+                                    <tr>
+                                        <td>BrowseComp</td>
+                                        <td>✗</td>
+                                        <td>7</td>
+                                        <td>1,266</td>
+                                    </tr>
+                                    <tr>
+                                        <td>TravelPlanner</td>
+                                        <td>✗</td>
+                                        <td>1</td>
+                                        <td>1,225</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Mind2Web-Live</td>
+                                        <td>✗</td>
+                                        <td>76</td>
+                                        <td>542</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Online Mind2Web</td>
+                                        <td>✗</td>
+                                        <td>139</td>
+                                        <td>300</td>
+                                    </tr>
+                                    <tr>
+                                        <td>DeepShop</td>
+                                        <td>✗</td>
+                                        <td>1</td>
+                                        <td>150</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Mind2Web-2</td>
+                                        <td>✗</td>
+                                        <td>44</td>
+                                        <td>130</td>
+                                    </tr>
+                                    <tr>
+                                        <td>GAIA-Web</td>
+                                        <td>✓</td>
+                                        <td>1</td>
+                                        <td>87</td>
+                                    </tr>
+                                    <tr style="background-color: #fff3cd; font-weight: bold;">
+                                        <td>WebGym (Ours)</td>
+                                        <td>✓</td>
+                                        <td>127,645</td>
+                                        <td>292,092</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="mt-3">
+                            <strong>Task sourcing for WebGym.</strong> We aggregate web agent task sets from 10 widely-used benchmarks
+                            and environments to seed our procedural construction. WebGym provides the largest task set with difficulty annotations.
+                        </p>
+
+                        <h3 class="title is-4 mt-5">Task Decomposition</h3>
+                        <div class="has-text-centered mt-4">
+                            <img src="website/images/decomposition_illustration.png" alt="Task Decomposition Illustration" style="width:100%;">
+                        </div>
+                        <p class="mt-3 has-text-justified">
+                            <strong>Task decomposition in WebGym.</strong> We decompose complex tasks into atomic subtasks,
+                            enabling compositional learning from simple to complex tasks.
+                        </p>
+
+                        <h3 class="title is-4 mt-5">Task Set Characteristics</h3>
+                        <div class="has-text-centered mt-4">
+                            <div class="tabs is-toggle is-small is-centered">
+                                <ul id="task-figure-tabs">
+                                    <li style="pointer-events: none;">
+                                        <a style="background-color: #f5f5f5; color: #888; cursor: default; border-color: #dbdbdb;">
+                                            <span>Click one:</span>
+                                        </a>
+                                    </li>
+                                    <li class="is-active" data-target="domain-sunburst">
+                                        <a>
+                                            <span>Domain Distribution</span>
+                                        </a>
+                                    </li>
+                                    <li data-target="difficulty-distribution">
+                                        <a>
+                                            <span>Difficulty Distribution</span>
+                                        </a>
+                                    </li>
+                                    <li data-target="length-difficulty">
+                                        <a>
+                                            <span>Length vs Difficulty</span>
+                                        </a>
+                                    </li>
+                                    <li data-target="rubric-comparison">
+                                        <a>
+                                            <span>Rubric-based Evaluation</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div class="task-figure-content mt-4">
+                                <div id="domain-sunburst" class="task-figure is-active">
+                                    <p class="mb-3 has-text-justified">
+                                        <strong>Domain distribution in WebGym.</strong> Distribution of tasks across domains according to the Mind2Web-2 taxonomy
+                                        (6 domains, 24 subdomains). The task set spans 127,645 unique websites with broad domain coverage,
+                                        promoting diverse training samples across e-commerce, information retrieval, social media, entertainment, and more.
+                                    </p>
+                                    <img src="website/images/domain_sunburst.png" alt="Domain Distribution" style="width:80%; max-width:800px;">
+                                </div>
+
+                                <div id="difficulty-distribution" class="task-figure">
+                                    <p class="mb-3 has-text-justified">
+                                        <strong>Difficulty distribution across training and out-of-distribution test sets.</strong> The transparent bars overlaying
+                                        the solid bars represent decomposed tasks, while the slashed bars indicate the test set. Around 80% of tasks are Easy (difficulty 1-3),
+                                        which is intentional to encourage learning generalizable basic skills while focusing on more specific objectives at higher difficulty levels.
+                                    </p>
+                                    <img src="website/images/difficulty_train_vs_ood.png" alt="Difficulty Distribution" style="width:80%; max-width:800px;">
+                                </div>
+
+                                <div id="length-difficulty" class="task-figure">
+                                    <p class="mb-3 has-text-justified">
+                                        <strong>Distribution of trajectory lengths by task difficulty (run-time statistics).</strong> Violin plots show the probability density
+                                        of trajectory lengths for answered trajectories, with the KDE mode (black line, where the violin is widest) indicating the most likely
+                                        length and mean (red) indicating the average. Easy tasks (difficulty 1-3) require 7.8 steps on average, medium tasks (4-6) require 9.9 steps,
+                                        and hard tasks (7+) demand 11.9 steps, confirming that harder tasks involve more complex multi-step action and navigation.
+                                    </p>
+                                    <img src="website/images/length_vs_difficulty_violin.png" alt="Length vs Difficulty" style="width:80%; max-width:800px;">
+                                </div>
+
+                                <div id="rubric-comparison" class="task-figure">
+                                    <p class="mb-3 has-text-justified">
+                                        <strong>Agreement between automated evaluators and human judgment.</strong> Rubric-based evaluation (with explicit criteria)
+                                        consistently improves agreement over task-only evaluation, yielding higher accuracy and precision across LLM-based evaluators.
+                                        Among the evaluators, GPT-4o shows the largest shift after adding the rubric: precision increases the most while recall drops slightly,
+                                        indicating that the rubric makes GPT-4o apply stricter, more conservative pass criteria.
+                                    </p>
+                                    <img src="website/images/rubric_comparison.png" alt="Rubric-based Evaluation" style="width:80%; max-width:800px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- System Design Section -->
+    <section class="section" id="system">
+        <div class="container is-max-desktop">
+            <div class="columns is-centered">
+                <div class="column is-full">
+                    <h2 class="title is-3 has-text-centered">High-Throughput Rollout System</h2>
+                    <div class="content has-text-justified">
+                        <p>
+                            To enable efficient RL training at scale, we developed a high-throughput asynchronous rollout system
+                            designed specifically for web agents. Our system achieves a 4-5× speedup compared to naive implementations.
+                        </p>
+
+                        <h3 class="title is-4 mt-5">System Architecture</h3>
+                        <p>
+                            Our rollout system employs an asynchronous architecture that decouples environment simulation from policy inference.
+                            This design enables efficient batching of policy forward passes across multiple concurrent environments, maximizing
+                            GPU utilization while maintaining high throughput.
+                        </p>
+
+                        <!-- Architecture View Buttons -->
+                        <div class="tabs is-centered is-toggle is-small mt-4" style="margin-bottom: 20px;">
+                            <ul>
+                                <li style="pointer-events: none;">
+                                    <a style="background-color: #f5f5f5; color: #888; cursor: default; border-color: #dbdbdb;">
+                                        <span>Click one:</span>
+                                    </a>
+                                </li>
+                                <li class="is-active" data-architecture="async">
+                                    <a onclick="switchArchitectureView('async')">
+                                        <span>Async design (ours)</span>
+                                    </a>
+                                </li>
+                                <li data-architecture="batching">
+                                    <a onclick="switchArchitectureView('batching')">
+                                        <span>Sync design</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div id="architecture-figure" class="has-text-centered mt-5 mb-5">
+                            <div style="max-width: 900px; margin: 0 auto;">
+                                <img src="website/images/async_rollout_top.png" alt="Async Design" style="width: 100%; height: auto;">
+                            </div>
+                            <p class="mt-3" style="font-size: 0.9em;">
+                                <strong>Async design (ours):</strong> The asynchronous architecture decouples different threads in a batch.
+                            </p>
+                        </div>
+
+                        <div class="box mt-4">
+                            <h4 class="title is-5">Key Features</h4>
+                            <ul>
+                                <li><strong>Asynchronous Architecture:</strong> Decouples environment simulation from policy inference, allowing environments to run independently while batching policy queries</li>
+                                <li><strong>Efficient Batching:</strong> Batches policy forward passes across multiple concurrent environments to maximize GPU utilization</li>
+                                <li><strong>Scalable Design:</strong> Can collect 1,800 trajectories (avg. 13.2 steps) in 30 minutes using 128 CPUs and 24 H100 GPUs</li>
+                                <li><strong>Browser Pool Management:</strong> Manages a pool of browser instances to minimize startup overhead and maximize throughput</li>
+                            </ul>
+                        </div>
+
+                        <h3 class="title is-4 mt-5">Performance Metrics <span style="font-size: 0.7em; font-weight: normal; color: #666;">(Hover to see details)</span></h3>
+                        <div class="columns is-multiline mt-4">
+                            <div class="column is-half">
+                                <div class="flip-card" id="throughput-flip-card">
+                                    <div class="flip-card-inner">
+                                        <div class="flip-card-front">
+                                            <h5 class="title is-6">Throughput</h5>
+                                            <p style="font-size: 2em; font-weight: bold; color: #3273dc;">4-5×</p>
+                                            <p>speedup vs. naive implementation</p>
+                                        </div>
+                                        <div class="flip-card-back">
+                                            <div style="width: 100%; height: 100%; display: flex; flex-direction: column; padding: 5px;">
+                                                <h5 style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">4.5× Speedup</h5>
+                                                <div style="display: flex; gap: 5px; flex: 1; min-height: 0;">
+                                                    <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+                                                        <div style="font-size: 8px; text-align: center; margin-bottom: 2px; color: #999;">Naive</div>
+                                                        <div style="flex: 1; position: relative; min-height: 80px;">
+                                                            <canvas id="metric-chart-throughput-naive" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
+                                                        </div>
+                                                    </div>
+                                                    <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+                                                        <div style="font-size: 8px; text-align: center; margin-bottom: 2px; color: #3273dc;">Ours</div>
+                                                        <div style="flex: 1; position: relative; min-height: 80px;">
+                                                            <canvas id="metric-chart-throughput-ours" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="column is-half">
+                                <div class="flip-card">
+                                    <div class="flip-card-inner">
+                                        <div class="flip-card-front">
+                                            <h5 class="title is-6">Collection Rate</h5>
+                                            <p style="font-size: 2em; font-weight: bold; color: #3273dc;">1,800</p>
+                                            <p>trajectories in 30 minutes</p>
+                                        </div>
+                                        <div class="flip-card-back">
+                                            <canvas id="metric-chart-collection"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="column is-half">
+                                <div class="flip-card" id="steps-flip-card">
+                                    <div class="flip-card-inner">
+                                        <div class="flip-card-front">
+                                            <h5 class="title is-6">Average Steps</h5>
+                                            <p style="font-size: 2em; font-weight: bold; color: #3273dc;">13.2</p>
+                                            <p>steps per trajectory</p>
+                                        </div>
+                                        <div class="flip-card-back">
+                                            <canvas id="metric-chart-steps"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="column is-half">
+                                <div class="flip-card">
+                                    <div class="flip-card-inner">
+                                        <div class="flip-card-front">
+                                            <h5 class="title is-6">Resources</h5>
+                                            <p style="font-size: 1.5em; font-weight: bold; color: #3273dc;">128 CPUs<br>24 H100s</p>
+                                            <p>hardware configuration</p>
+                                        </div>
+                                        <div class="flip-card-back">
+                                            <div id="metric-chart-resources" style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 10px;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h3 class="title is-4 mt-5">Design Benefits</h3>
+                        <p>
+                            The asynchronous design enables efficient scaling to large batch sizes, which is critical for online RL training.
+                            By batching policy queries across multiple environments, we achieve high GPU utilization while maintaining low latency
+                            for individual environment steps. This design is particularly effective for web agents, where environment simulation
+                            (browser interactions) can be parallelized across CPU cores while policy inference is batched on GPUs.
+                        </p>
+
+                        <h3 class="title is-4 mt-5">Performance Benchmarks</h3>
+                        <p>
+                            We conducted comprehensive benchmarks to evaluate the scalability and efficiency of our rollout system.
+                            The results demonstrate strong scaling with both increased parallelism and GPU resources.
+                        </p>
+
+                        <!-- Benchmark View Buttons -->
+                        <div class="tabs is-centered is-toggle is-small mt-4" style="margin-bottom: 20px;">
+                            <ul>
+                                <li style="pointer-events: none;">
+                                    <a style="background-color: #f5f5f5; color: #888; cursor: default; border-color: #dbdbdb;">
+                                        <span>Click one:</span>
+                                    </a>
+                                </li>
+                                <li class="is-active" data-benchmark="cpu-scale">
+                                    <a onclick="switchBenchmarkView('cpu-scale')">
+                                        <span>CPU Scaling</span>
+                                    </a>
+                                </li>
+                                <li data-benchmark="gpu-scale">
+                                    <a onclick="switchBenchmarkView('gpu-scale')">
+                                        <span>GPU Scaling</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div id="benchmark-figures" class="mt-4">
+                            <div class="has-text-centered" style="max-width: 700px; margin: 0 auto;">
+                                <img src="website/images/pressure_test_time_cost.png" alt="CPU Scaling Performance" style="max-width: 100%; height: auto;">
+                                <p class="mt-3" style="font-size: 0.9em;">
+                                    <strong>CPU Scaling:</strong> Rollout time decreases significantly with increased CPU parallelism,
+                                    demonstrating efficient scaling.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Training Results Section -->
+    <section class="section" id="results">
+        <div class="container is-max-desktop">
+            <div class="columns is-centered">
+                <div class="column is-full">
+                    <h2 class="title is-3 has-text-centered">Training Results</h2>
+                    <div class="content has-text-justified">
+                        <p>
+                            We train agents using a simple REINFORCE-style RL training procedure on WebGym. Our results show that
+                            fine-tuning Qwen3-VL-Instruct-8B with RL on WebGym significantly improves performance on held-out test tasks.
+                        </p>
+
+                        <h3 class="title is-4 mt-5">Main Results</h3>
+                        <div class="table-container">
+                            <table class="table is-striped is-hoverable is-fullwidth">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>Base Model</th>
+                                        <th>Prompt</th>
+                                        <th>RL on WebGym</th>
+                                        <th>Performance (%)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td rowspan="2"><strong>Proprietary Models</strong></td>
+                                        <td>GPT-4o</td>
+                                        <td>Memory</td>
+                                        <td>✗</td>
+                                        <td>27.1</td>
+                                    </tr>
+                                    <tr>
+                                        <td>GPT-5</td>
+                                        <td>Memory</td>
+                                        <td>✗</td>
+                                        <td>29.8</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="4"><strong>Open-source Models</strong></td>
+                                        <td>Qwen3-VL-Instruct-8B</td>
+                                        <td>Official</td>
+                                        <td>✗</td>
+                                        <td>27.4</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Qwen3-VL-Instruct-8B</td>
+                                        <td>Memory</td>
+                                        <td>✗</td>
+                                        <td>26.2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Qwen3-VL-Thinking-8B</td>
+                                        <td>Memory</td>
+                                        <td>✗</td>
+                                        <td>28.2</td>
+                                    </tr>
+                                    <tr style="background-color: #d4edda; font-weight: bold;">
+                                        <td>Qwen3-VL-Instruct-8B</td>
+                                        <td>Memory</td>
+                                        <td>✓ (Ours)</td>
+                                        <td>42.9</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="mt-3">
+                            <strong>WebGym empowers the small Qwen3-VL-Instruct-8B model to achieve state-of-the-art performance</strong>
+                            on the holdout test task set, arriving at a 42.9% success rate, significantly surpassing all agents
+                            empowered by proprietary models and other open-source models.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Visualizations Placeholder Section -->
+    <section class="section" id="visualizations">
+        <div class="container is-max-desktop">
+            <h2 class="title is-3 has-text-centered">Performance Analysis</h2>
+            <div class="content has-text-justified">
+                <p>
+                    We analyze the effects of scaling different dimensions of WebGym: task set breadth (domain diversity),
+                    depth (difficulty composition), and size, as well as the train-time interaction horizon.
+                </p>
+
+                <h3 class="title is-4 mt-5">Training Performance Curves</h3>
+                <p>
+                    Below we show the training curves comparing different ablations and showing performance across difficulty levels.
+                </p>
+            </div>
+        </div>
+
+        <!-- Figure 1: Full Width -->
+        <div style="width: 100%; padding: 30px 40px; margin-top: 30px; background-color: #f9f9f9;">
+            <div style="max-width: 600px; margin: 0 auto;">
+                <h4 class="title is-5 has-text-centered mb-4">Ablations on Base Models, Prompting, and Action Filtering</h4>
+
+                <!-- Ablation Buttons -->
+                <div class="tabs is-centered is-boxed is-small" style="margin-bottom: 10px;">
+                    <ul>
+                        <li style="pointer-events: none;">
+                            <a style="background-color: #f5f5f5; color: #888; cursor: default; border-color: #dbdbdb;">
+                                <span>Click one:</span>
+                            </a>
+                        </li>
+                        <li class="is-active" data-ablation="memory-prompt">
+                            <a onclick="switchAblationView('memory-prompt')">
+                                <span>Memory Prompt</span>
+                            </a>
+                        </li>
+                        <li data-ablation="repetition-penalty">
+                            <a onclick="switchAblationView('repetition-penalty')">
+                                <span>Repetition Penalty</span>
+                            </a>
+                        </li>
+                        <li data-ablation="model-variant">
+                            <a onclick="switchAblationView('model-variant')">
+                                <span>Model Variant</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Explanation text -->
+                <div id="ablation-explanation" style="margin-bottom: 20px; padding: 12px 20px; background-color: #fff; border-left: 4px solid #3273dc; font-size: 0.9em; line-height: 1.6;">
+                </div>
+
+                <canvas id="chart-ablation-improve"></canvas>
+                <p class="mt-3 has-text-justified" style="font-size: 0.9em;">
+                    <strong>Figure:</strong> Ablation study on model variants, prompting, and action filtering. Curves are smoothed with EMA (α=0.5).
+                </p>
+            </div>
+        </div>
+
+        <!-- Figure 2: Four Difficulty Charts Displayed Simultaneously -->
+        <div style="width: 100%; padding: 30px 40px; margin-top: 30px; background-color: #f9f9f9;">
+            <div style="max-width: 1200px; margin: 0 auto;">
+                <h4 class="title is-5 has-text-centered mb-4">Exploring Scaling Dimensions and Difficulty-Aware Training</h4>
+
+                <!-- Scaling Dimension Buttons -->
+                <div class="tabs is-centered is-boxed" style="margin-bottom: 10px;">
+                    <ul>
+                        <li style="pointer-events: none;">
+                            <a style="background-color: #f5f5f5; color: #888; cursor: default; border-color: #dbdbdb;">
+                                <span>Click one:</span>
+                            </a>
+                        </li>
+                        <li class="is-active" data-scaling="overview">
+                            <a onclick="switchScalingDimension('overview')">
+                                <span>Scaling Overview</span>
+                            </a>
+                        </li>
+                        <li data-scaling="breadth">
+                            <a onclick="switchScalingDimension('breadth')">
+                                <span>Scaling Breadth</span>
+                            </a>
+                        </li>
+                        <li data-scaling="size">
+                            <a onclick="switchScalingDimension('size')">
+                                <span>Scaling Size</span>
+                            </a>
+                        </li>
+                        <li data-scaling="depth">
+                            <a onclick="switchScalingDimension('depth')">
+                                <span>Scaling Depth</span>
+                            </a>
+                        </li>
+                        <li data-scaling="horizon">
+                            <a onclick="switchScalingDimension('horizon')">
+                                <span>Control Horizon</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Explanation text -->
+                <div id="scaling-explanation" style="margin-bottom: 20px; padding: 12px 20px; background-color: #fff; border-left: 4px solid #3273dc; font-size: 0.9em; line-height: 1.6;">
+                </div>
+
+                <!-- Four Charts: Overall full width, then 3 in a row -->
+                <div class="columns is-multiline" style="margin: 0;">
+                    <!-- Overall Chart - Full Width -->
+                    <div class="column is-full">
+                        <div style="max-width: 700px; margin: 0 auto;">
+                            <canvas id="chart-ablation-overall"></canvas>
+                            <p class="has-text-centered mt-2" style="font-size: 0.9em; font-weight: bold;">(a) Overall</p>
+                        </div>
+                    </div>
+                    <!-- Easy, Medium, Hard - 3 in a row -->
+                    <div class="column is-one-third">
+                        <canvas id="chart-ablation-easy"></canvas>
+                        <p class="has-text-centered mt-2" style="font-size: 0.9em; font-weight: bold;">(b) Easy (1-3)</p>
+                    </div>
+                    <div class="column is-one-third">
+                        <canvas id="chart-ablation-medium"></canvas>
+                        <p class="has-text-centered mt-2" style="font-size: 0.9em; font-weight: bold;">(c) Medium (4-6)</p>
+                    </div>
+                    <div class="column is-one-third">
+                        <canvas id="chart-ablation-hard"></canvas>
+                        <p class="has-text-centered mt-2" style="font-size: 0.9em; font-weight: bold;">(d) Hard (7+)</p>
+                    </div>
+                </div>
+
+                <p class="mt-3 has-text-justified" style="font-size: 0.9em;">
+                    <strong>Figure:</strong> Impact of scaling dimensions on test-set success rate across difficulty levels. Curves are smoothed with EMA (α=0.5).
+                </p>
+            </div>
+        </div>
+    </section>
+
+
+    <section class="section" id="BibTeX">
+        <div class="container is-max-desktop content">
+            <h2 class="title">BibTeX</h2>
+            <pre><code>@article{bai2025webgym,
+    title={WebGym: Scaling Training Environments for Visual Web Agents with Realistic Tasks},
+    author={Bai, Hao and Taymanov, Alexey and Zhang, Tong and Kumar, Aviral and Whitehead, Spencer},
+    journal={arXiv preprint},
+    year={2025}
+}</code></pre>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div align="center" class="container">
+            <div class="columns is-centered">
+                <div class="content is-small">
+                    This website template is borrowed from <a href="https://github.com/nerfies/nerfies.github.io">here</a> and <a href="https://xwang.dev/mint-bench/">here</a>.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- WebGym Visualization Scripts -->
+    <script>
+        // Global variables to store charts and data
+        let difficultyCharts = {};
+        let ablationImproveChart = null;
+        let ablationImproveData = null;
+        let ablationByDifficultyData = null;
+        let currentScalingDimension = 'overview';
+
+        // Mapping of scaling dimensions to curves
+        const scalingDimensions = {
+            'breadth': ['biased to hard', 'exclude domains'],
+            'size': ['biased to hard', 'only easy', 'only medium'],
+            'depth': ['uniform sampling', 'only easy'],
+            'horizon': ['uniform sampling', 'shorten horizon']
+        };
+
+        // Function to switch between scaling dimensions
+        function switchScalingDimension(dimension) {
+            currentScalingDimension = dimension;
+
+            // Update tab active state
+            const scalingTabs = document.querySelectorAll('.tabs.is-boxed li');
+            scalingTabs.forEach(tab => {
+                tab.classList.remove('is-active');
+            });
+            document.querySelector('.tabs.is-boxed li[data-scaling="' + dimension + '"]').classList.add('is-active');
+
+            // Update explanation text
+            const explanations = {
+                'overview': '<strong>Scaling Overview:</strong> This chart compares the peak performance (from raw, unsmoothed data) achieved by different scaling strategies across all difficulty levels. Starting from a baseline, we progressively apply different scaling dimensions: breadth (domain coverage), effective size (sampling more easy tasks), depth (wider difficulty range), and horizon control (train-time step budget). This shows the cumulative impact of each scaling dimension on agent performance.',
+                'breadth': '<strong>Scaling Task Set Breadth (Domain Coverage):</strong> To study the effect of having a wide variety of domains, we randomly remove half of the subdomains from the training set ("exclude domains") while keeping the same training recipe otherwise. This results in a subsampled training task set that only contains 53% of original tasks. Across all evaluation slices, removing domains consistently slows down improvements and lowers the final success rate, indicating that domain breadth matters. The degradation reflects reduced domain diversity, which limits generalization to unseen websites and subdomains.',
+                'size': '<strong>Scaling Candidate Task Set Size by Sampling More Easy Tasks:</strong> Our difficulty mixture of 2:5:3 is heavily biased towards harder tasks compared to uniform sampling, because easy tasks comprise around 80% of all tasks. This makes the effective task set size very small and leads to overfitting around 36k-42k trajectories (see "biased to hard" curve). Training exclusively on easy tasks performs surprisingly well and is more stable. This contrasts with typical LLM reasoning findings, but is consistent with WebGym\'s structure, where the large set of easy tasks spans many websites and domains and thus supports generalization to unseen websites.',
+                'depth': '<strong>Scaling Candidate Task Set Depth (Wider Range of Difficulty Levels):</strong> Despite the strong performance of "only easy", higher-difficulty tasks still play an important role. We incorporate tasks spanning a wider range of difficulty levels through uniform sampling from the full training set. Uniform sampling yields the highest overall performance and achieves significantly higher success rate on medium-difficulty test set compared to training on easy tasks alone. Because "only easy" already draws from a large diverse pool, the additional gains are attributed to including medium and hard tasks, which provide training signals for capabilities beyond simple interactions.',
+                'horizon': '<strong>Controlling Train-Time Interaction Budget:</strong> We reduce the per-episode step limit from (15, 30, 45) to (10, 20, 30) for (easy, medium, hard) tasks respectively ("shortened horizon"). Empirically, shortening the horizon improves both sample efficiency and final performance across all difficulty slices, increasing the peak success rate from 38.2% to 42.9%. A tighter step budget acts as a regularizer on the policy\'s interaction process. By limiting opportunities for late-stage recovery, it concentrates training signal on earlier, higher-impact decisions, improving credit assignment and reducing variance in policy updates.'
+            };
+            const explanationDiv = document.getElementById('scaling-explanation');
+            explanationDiv.classList.add('fade-out');
+            setTimeout(() => {
+                explanationDiv.classList.remove('fade-out');
+                explanationDiv.innerHTML = explanations[dimension];
+                explanationDiv.classList.add('fade-in');
+                setTimeout(() => explanationDiv.classList.remove('fade-in'), 300);
+            }, 200);
+
+            // Recreate all charts with filtered curves
+            if (ablationByDifficultyData) {
+                if (dimension === 'overview') {
+                    createScalingOverviewCharts(ablationByDifficultyData);
+                } else {
+                    createAblationByDifficultyCharts(ablationByDifficultyData, dimension);
+                }
+            }
+        }
+
+        // Function to switch between ablation views
+        function switchAblationView(view) {
+            // Update tab active state
+            const ablationTabs = document.querySelector('.tabs.is-boxed.is-small');
+            ablationTabs.querySelectorAll('li').forEach(tab => {
+                tab.classList.remove('is-active');
+            });
+            ablationTabs.querySelector('li[data-ablation="' + view + '"]').classList.add('is-active');
+
+            // Update explanation text
+            const explanations = {
+                'memory-prompt': '<strong>Memory Prompting:</strong> We propose that the model should maintain a memory by responding with the updated memory in each step. The prompt with memory is demonstrated in the paper appendix. Utilizing the memory prompt significantly boosts performance after RL training (Instruct-8B versus w/o Memory Prompt).',
+                'repetition-penalty': '<strong>Removing Repeated Actions with a Reward Penalty:</strong> We frequently observe cases where the base model is stuck at the same screenshot and attempts to repeat the same action multiple times. We design a penalty for these repeated actions during RL: we explicitly filter out a step if the resulting next step presents an identical screenshot, even if the current step is part of a successful trajectory. After applying this penalty, RL training becomes substantially more sample efficient (Instruct-8B vs w/o Repetition Penalty).',
+                'model-variant': '<strong>Use of Thinking for Every Step:</strong> We experiment with the Thinking variant of Qwen3-VL-8B with the same prompt as the Instruct model. The Thinking model attains higher initial performance, suggesting that extended reasoning at each step can be beneficial. However, as training progresses with WebGym, the performance gap decreases considerably, and soon the Instruct model surpasses the Thinking model. Given the favorable trade-off between performance and efficiency, we adopt the Instruct model for subsequent experiments.'
+            };
+            const explanationDiv = document.getElementById('ablation-explanation');
+            explanationDiv.classList.add('fade-out');
+            setTimeout(() => {
+                explanationDiv.classList.remove('fade-out');
+                explanationDiv.innerHTML = explanations[view];
+                explanationDiv.classList.add('fade-in');
+                setTimeout(() => explanationDiv.classList.remove('fade-in'), 300);
+            }, 200);
+
+            // Recreate chart with appropriate ablation comparison
+            if (ablationImproveData && ablationImproveChart) {
+                ablationImproveChart.destroy();
+                createAblationImproveChart(ablationImproveData, view);
+            }
+        }
+
+        // Function to switch between benchmark views
+        function switchBenchmarkView(view) {
+            // Update tab active state - select all toggle tabs and use the third one (benchmark tabs)
+            // Index 0: Task Set Characteristics tabs
+            // Index 1: Architecture tabs
+            // Index 2: Benchmark tabs
+            const allToggleTabs = document.querySelectorAll('.tabs.is-toggle.is-small');
+            const benchmarkTabs = allToggleTabs[2]; // Third toggle tabs are the benchmark tabs
+            benchmarkTabs.querySelectorAll('li').forEach(tab => {
+                tab.classList.remove('is-active');
+            });
+            benchmarkTabs.querySelector('li[data-benchmark="' + view + '"]').classList.add('is-active');
+
+            const container = document.getElementById('benchmark-figures');
+            container.classList.add('fade-out');
+            setTimeout(() => {
+                container.classList.remove('fade-out');
+
+                if (view === 'cpu-scale') {
+                    // Show CPU scaling figure
+                    container.innerHTML = `
+                        <div class="has-text-centered" style="max-width: 700px; margin: 0 auto;">
+                            <img src="website/images/pressure_test_time_cost.png" alt="CPU Scaling Performance" style="max-width: 100%; height: auto;">
+                            <p class="mt-3" style="font-size: 0.9em;">
+                                <strong>CPU Scaling:</strong> Rollout time decreases significantly with increased CPU parallelism,
+                                demonstrating efficient scaling.
+                            </p>
+                        </div>
+                    `;
+                } else if (view === 'gpu-scale') {
+                    // Show GPU scaling figure
+                    container.innerHTML = `
+                        <div class="has-text-centered" style="max-width: 700px; margin: 0 auto;">
+                            <img src="website/images/pressure_test_gpu_scale.png" alt="GPU Scaling Performance" style="max-width: 100%; height: auto;">
+                            <p class="mt-3" style="font-size: 0.9em;">
+                                <strong>GPU scaling performance.</strong> The system scales effectively with additional GPUs,
+                                enabling faster trajectory collection.
+                            </p>
+                        </div>
+                    `;
+                }
+                container.classList.add('fade-in');
+                setTimeout(() => container.classList.remove('fade-in'), 300);
+            }, 200);
+        }
+
+        // Function to switch between architecture views
+        function switchArchitectureView(view) {
+            console.log('switchArchitectureView called with view:', view);
+
+            // Update tab active state - select all toggle tabs and use the second one (architecture tabs)
+            // Index 0: Task Set Characteristics tabs
+            // Index 1: Architecture tabs
+            // Index 2: Benchmark tabs
+            const allToggleTabs = document.querySelectorAll('.tabs.is-toggle.is-small');
+            console.log('Found toggle tab groups:', allToggleTabs.length);
+
+            const architectureTabs = allToggleTabs[1]; // Second toggle tabs are the architecture tabs
+            console.log('Architecture tabs element:', architectureTabs);
+
+            if (architectureTabs) {
+                const allLis = architectureTabs.querySelectorAll('li');
+                console.log('Found li elements in architecture tabs:', allLis.length);
+
+                allLis.forEach(tab => {
+                    console.log('Removing is-active from:', tab);
+                    tab.classList.remove('is-active');
+                });
+
+                const targetTab = architectureTabs.querySelector('li[data-architecture="' + view + '"]');
+                console.log('Target tab with data-architecture="' + view + '":', targetTab);
+
+                if (targetTab) {
+                    targetTab.classList.add('is-active');
+                    console.log('Added is-active to target tab');
+                } else {
+                    console.error('Could not find target tab with data-architecture="' + view + '"');
+                }
+            } else {
+                console.error('Could not find architecture tabs at index [1]');
+            }
+
+            const container = document.getElementById('architecture-figure');
+            container.classList.add('fade-out');
+            setTimeout(() => {
+                container.classList.remove('fade-out');
+
+                if (view === 'async') {
+                    // Show async design (ours)
+                    container.innerHTML = `
+                        <div style="max-width: 900px; margin: 0 auto;">
+                            <img src="website/images/async_rollout_top.png" alt="Async Design" style="width: 100%; height: auto;">
+                        </div>
+                        <p class="mt-3" style="font-size: 0.9em;">
+                            <strong>Async design (ours):</strong> The asynchronous architecture decouples different threads in a batch.
+                        </p>
+                    `;
+                } else if (view === 'batching') {
+                    // Show sync design
+                    container.innerHTML = `
+                        <div style="max-width: 900px; margin: 0 auto;">
+                            <img src="website/images/async_rollout_bottom.png" alt="Sync Design" style="width: 100%; height: auto;">
+                        </div>
+                        <p class="mt-3" style="font-size: 0.9em;">
+                            <strong>Sync design:</strong> The synchronous design with step-level and episode-level batching.
+                        </p>
+                    `;
+                }
+                container.classList.add('fade-in');
+                setTimeout(() => container.classList.remove('fade-in'), 300);
+            }, 200);
+        }
+
+        // Initialize charts when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize explanation texts
+            document.getElementById('ablation-explanation').innerHTML = '<strong>Memory Prompting:</strong> We propose that the model should maintain a memory by responding with the updated memory in each step. The prompt with memory is demonstrated in the paper appendix. Utilizing the memory prompt significantly boosts performance after RL training (Instruct-8B versus w/o Memory Prompt).';
+            document.getElementById('scaling-explanation').innerHTML = '<strong>Scaling Overview:</strong> This chart compares the peak performance (from raw, unsmoothed data) achieved by different scaling strategies across all difficulty levels. Starting from a baseline, we progressively apply different scaling dimensions: breadth (domain coverage), effective size (sampling more easy tasks), depth (wider difficulty range), and horizon control (train-time step budget). This shows the cumulative impact of each scaling dimension on agent performance.';
+
+            // Load and create ablation improvement chart
+            initAblationImproveChart();
+
+            // Load and create ablation by difficulty charts
+            initAblationByDifficultyCharts();
+
+            // Initialize metric flip card charts
+            initMetricCharts();
+
+            // Initialize task figure tabs
+            const taskFigureTabs = document.querySelectorAll('#task-figure-tabs li');
+            taskFigureTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const target = this.getAttribute('data-target');
+                    if (!target) return; // Skip "Click one:" button
+
+                    // Update tab active state
+                    taskFigureTabs.forEach(t => t.classList.remove('is-active'));
+                    this.classList.add('is-active');
+
+                    // Update figure visibility with fade animation
+                    const currentFig = document.querySelector('.task-figure.is-active');
+                    if (currentFig) {
+                        currentFig.classList.add('fade-out');
+                        setTimeout(() => {
+                            currentFig.classList.remove('is-active', 'fade-out');
+                            const targetFig = document.getElementById(target);
+                            targetFig.classList.add('is-active', 'fade-in');
+                            setTimeout(() => targetFig.classList.remove('fade-in'), 300);
+                        }, 200);
+                    } else {
+                        document.getElementById(target).classList.add('is-active');
+                    }
+                });
+            });
+        });
+
+        // Ablation Improvement Chart
+        function initAblationImproveChart() {
+            fetch('website/data/ablation_improve_cache.json')
+                .then(response => response.json())
+                .then(data => {
+                    ablationImproveData = data;
+                    createAblationImproveChart(data, 'memory-prompt'); // Start with memory prompt comparison
+                })
+                .catch(error => console.error('Error loading ablation improve data:', error));
+        }
+
+        function applyEMA(data, alpha = 0.5) {
+            if (data.length === 0) return data;
+            const smoothed = [data[0]];
+            for (let i = 1; i < data.length; i++) {
+                const smoothedValue = alpha * data[i] + (1 - alpha) * smoothed[i - 1];
+                smoothed.push(smoothedValue);
+            }
+            return smoothed;
+        }
+
+        function createAblationImproveChart(cacheData, ablationView) {
+            const ctx = document.getElementById('chart-ablation-improve');
+            if (!ctx) return;
+
+            const colors = {
+                'Instruct-8B': '#ff7f0e',
+                'w/o Memory Prompt': '#d62728',
+                'w/o Repetition Penalty': '#2ca02c',
+                'Thinking-8B': '#aec7e8'
+            };
+
+            // Define custom labels for each ablation view
+            const labelMappings = {
+                'memory-prompt': {
+                    'Instruct-8B': 'With Memory Prompt',
+                    'w/o Memory Prompt': 'Without Memory Prompt'
+                },
+                'repetition-penalty': {
+                    'Instruct-8B': 'With Repetition Penalty',
+                    'w/o Repetition Penalty': 'Without Repetition Penalty'
+                },
+                'model-variant': {
+                    'Instruct-8B': 'Qwen3-VL-Instruct-8B',
+                    'Thinking-8B': 'Qwen3-VL-Thinking-8B'
+                }
+            };
+
+            const currentLabels = labelMappings[ablationView] || {};
+            const baselineStart = 26.2;
+            const datasets = [];
+
+            // Determine which curves to show based on ablation view
+            const curvesToShow = {
+                'memory-prompt': ['Instruct-8B', 'w/o Memory Prompt'],
+                'repetition-penalty': ['Instruct-8B', 'w/o Repetition Penalty'],
+                'model-variant': ['Instruct-8B', 'Thinking-8B']
+            };
+
+            const showCurves = curvesToShow[ablationView] || ['Instruct-8B'];
+
+            // Process Instruct-8B (merged) if needed
+            if (showCurves.includes('Instruct-8B')) {
+                const data1 = cacheData["Instruct-8B"]["ood"]["avg"].slice(0, 7);
+                const data2 = cacheData["Instruct-8B-2"]["ood"]["avg"].slice(0, 7);
+                data1[0] = baselineStart;
+                data2[0] = baselineStart;
+
+                const smoothed1 = applyEMA(data1, 0.5);
+                const smoothed2 = applyEMA(data2, 0.5);
+
+                const avgData = smoothed1.map((val, i) => (val + smoothed2[i]) / 2);
+                const minData = smoothed1.map((val, i) => Math.min(val, smoothed2[i]));
+                const maxData = smoothed1.map((val, i) => Math.max(val, smoothed2[i]));
+
+                datasets.push({
+                    label: currentLabels['Instruct-8B'] || 'Instruct-8B',
+                    data: avgData,
+                    borderColor: colors['Instruct-8B'],
+                    backgroundColor: colors['Instruct-8B'],
+                    borderWidth: 4,
+                    fill: false,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    tension: 0
+                });
+
+                // Add shaded area
+                datasets.push({
+                    data: minData,
+                    borderColor: 'transparent',
+                    backgroundColor: 'transparent',
+                    fill: '+1',
+                    pointRadius: 0,
+                    pointHoverRadius: 0
+                });
+
+                datasets.push({
+                    data: maxData,
+                    borderColor: 'transparent',
+                    backgroundColor: colors['Instruct-8B'] + '33',
+                    fill: '-1',
+                    pointRadius: 0,
+                    pointHoverRadius: 0
+                });
+            }
+
+            // Process Thinking-8B if needed
+            if (showCurves.includes('Thinking-8B')) {
+                const thinkData = cacheData["Thinking-8B"]["ood"]["avg"].slice(0, 4);
+                const smoothedThink = applyEMA(thinkData, 0.5);
+                datasets.push({
+                    label: currentLabels['Thinking-8B'] || 'Thinking-8B',
+                    data: smoothedThink,
+                    borderColor: colors['Thinking-8B'],
+                    backgroundColor: colors['Thinking-8B'],
+                    borderWidth: 4,
+                    fill: false,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    tension: 0
+                });
+            }
+
+            // Process other ablations if needed
+            ['w/o Memory Prompt', 'w/o Repetition Penalty'].forEach(name => {
+                if (showCurves.includes(name)) {
+                    let data = cacheData[name]["ood"]["avg"].slice(0, 7);
+                    if (name === 'w/o Repetition Penalty') {
+                        data[0] = baselineStart;
+                    }
+                    const smoothed = applyEMA(data, 0.5);
+                    datasets.push({
+                        label: currentLabels[name] || name,
+                        data: smoothed,
+                        borderColor: colors[name],
+                        backgroundColor: colors[name],
+                        borderWidth: 4,
+                        fill: false,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        tension: 0
+                    });
+                }
+            });
+
+            ablationImproveChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['0k', '6k', '12k', '18k', '24k', '30k', '36k'],
+                    datasets: datasets.filter(d => d.label)
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2,
+                    animation: {
+                        duration: 2500,
+                        easing: 'easeInOutQuart'
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: { size: 12 },
+                                boxWidth: 25
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '#Training Trajectories Collected',
+                                font: { size: 14 }
+                            },
+                            grid: { display: true, color: 'rgba(0,0,0,0.1)' },
+                            ticks: { font: { size: 12 } }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Test-set Success Rate (%)',
+                                font: { size: 14 }
+                            },
+                            grid: { display: true, color: 'rgba(0,0,0,0.1)' },
+                            ticks: { font: { size: 12 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Ablation By Difficulty Charts
+        function initAblationByDifficultyCharts() {
+            fetch('website/data/ablation_by_difficulty_cache.json')
+                .then(response => response.json())
+                .then(data => {
+                    ablationByDifficultyData = data;
+                    createScalingOverviewCharts(data);
+                })
+                .catch(error => console.error('Error loading ablation by difficulty data:', error));
+        }
+
+        // Create Scaling Overview Charts
+        function createScalingOverviewCharts(cacheData) {
+            const dataKeys = {
+                'overall': 'avg',
+                'easy': 'avg_easy',
+                'medium': 'avg_medium',
+                'hard': 'avg_hard'
+            };
+
+            const canvasIds = {
+                'overall': 'chart-ablation-overall',
+                'easy': 'chart-ablation-easy',
+                'medium': 'chart-ablation-medium',
+                'hard': 'chart-ablation-hard'
+            };
+
+            // Mapping of x-axis categories to data sources
+            const scalingMapping = {
+                'Baseline': 'exclude domains',  // baseline without breadth
+                '+Breadth': 'biased to hard',    // full task set
+                '+Size': 'only easy',             // effective size via easy tasks
+                '+Depth': 'uniform sampling',     // uniform sampling for depth
+                // Horizon uses uniform sampling but need to check the merged runs for biased to hard
+            };
+
+            // Destroy existing charts
+            for (const key in difficultyCharts) {
+                if (difficultyCharts[key]) {
+                    difficultyCharts[key].destroy();
+                }
+            }
+
+            for (const [key, canvasId] of Object.entries(canvasIds)) {
+                const ctx = document.getElementById(canvasId);
+                if (!ctx) continue;
+
+                const dataKey = dataKeys[key];
+                const peakValues = [];
+                const labels = [];
+
+                // Calculate peak raw performance for each scaling dimension
+                for (const [label, runName] of Object.entries(scalingMapping)) {
+                    const runData = cacheData[runName];
+                    if (!runData) continue;
+
+                    const dirsData = runData.dirs_data;
+
+                    // Handle merged runs for "biased to hard" - need to average raw data from both runs
+                    if (runName === 'biased to hard' && dirsData.length >= 2) {
+                        const rawData1 = dirsData[0].ood[dataKey];
+                        const rawData2 = dirsData[1].ood[dataKey];
+                        const minLen = Math.min(rawData1.length, rawData2.length);
+                        const avgData = [];
+                        for (let i = 0; i < minLen; i++) {
+                            avgData.push((rawData1[i] + rawData2[i]) / 2);
+                        }
+                        const peak = Math.max(...avgData);
+                        peakValues.push(peak);
+                        labels.push(label);
+                    } else if (dirsData.length > 0 && dirsData[0].ood) {
+                        const rawData = dirsData[0].ood[dataKey];
+                        const peak = Math.max(...rawData);
+                        peakValues.push(peak);
+                        labels.push(label);
+                    }
+                }
+
+                // Add +Horizon point - should show the better performing horizon configuration
+                // From Control Horizon tab, 'shorten horizon' (Short Horizon) has higher peak
+                const shortenHorizonData = cacheData['shorten horizon'];
+                const uniformSamplingData = cacheData['uniform sampling'];
+
+                console.log(`${key} - Checking horizon data...`);
+                if (shortenHorizonData && shortenHorizonData.dirs_data.length > 0) {
+                    const rawData = shortenHorizonData.dirs_data[0].ood[dataKey];
+                    console.log(`${key} - SHORT horizon raw data:`, rawData);
+                    const peak = Math.max(...rawData);
+                    console.log(`${key} - SHORT horizon peak:`, peak);
+                }
+                if (uniformSamplingData && uniformSamplingData.dirs_data.length > 0) {
+                    const rawData = uniformSamplingData.dirs_data[0].ood[dataKey];
+                    console.log(`${key} - FULL horizon raw data:`, rawData);
+                    const peak = Math.max(...rawData);
+                    console.log(`${key} - FULL horizon peak:`, peak);
+                }
+
+                // Use 'shorten horizon' for +Horizon point (it has the higher peak)
+                if (shortenHorizonData) {
+                    const dirsData = shortenHorizonData.dirs_data;
+                    if (dirsData.length > 0 && dirsData[0].ood) {
+                        const rawData = dirsData[0].ood[dataKey];
+                        const peak = Math.max(...rawData);
+                        peakValues.push(peak);
+                        labels.push('+ Horizon Control');
+                    }
+                }
+
+                difficultyCharts[key] = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Peak Success Rate (%)',
+                            data: peakValues,
+                            backgroundColor: '#3273dc',
+                            borderColor: '#3273dc',
+                            borderWidth: 4,
+                            fill: false,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 2,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return 'Peak: ' + context.parsed.y.toFixed(1) + '%';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Scaling Dimension Applied',
+                                    font: { size: 14, weight: 'bold' }
+                                },
+                                grid: { display: true, color: 'rgba(0,0,0,0.1)' },
+                                ticks: { font: { size: 11 } }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Peak Success Rate (%)',
+                                    font: { size: 14, weight: 'bold' }
+                                },
+                                grid: { display: true, color: 'rgba(0,0,0,0.1)' },
+                                ticks: { font: { size: 12 } },
+                                beginAtZero: false
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function createAblationByDifficultyCharts(cacheData, scalingDimension = 'breadth') {
+            const colors = {
+                'uniform sampling': '#ff9896',  // Full Horizon - lighter/more transparent
+                'biased to hard': '#ff7f0e',
+                'only easy': '#2ca02c',
+                'only medium': '#9467bd',
+                'exclude domains': '#ffbb78',
+                'shorten horizon': '#d62728'   // Short Horizon - darker/full opacity
+            };
+
+            const dataKeys = {
+                'overall': 'avg',
+                'easy': 'avg_easy',
+                'medium': 'avg_medium',
+                'hard': 'avg_hard'
+            };
+
+            const canvasIds = {
+                'overall': 'chart-ablation-overall',
+                'easy': 'chart-ablation-easy',
+                'medium': 'chart-ablation-medium',
+                'hard': 'chart-ablation-hard'
+            };
+
+            const titles = {
+                'overall': '(a) Overall',
+                'easy': '(b) Easy (1-3)',
+                'medium': '(c) Medium (4-6)',
+                'hard': '(d) Hard (7+)'
+            };
+
+            // Destroy existing charts before recreating
+            for (const key in difficultyCharts) {
+                if (difficultyCharts[key]) {
+                    difficultyCharts[key].destroy();
+                }
+            }
+
+            for (const [key, canvasId] of Object.entries(canvasIds)) {
+                const ctx = document.getElementById(canvasId);
+                if (!ctx) continue;
+
+                const datasets = createDatasetsForDifficulty(cacheData, dataKeys[key], colors, scalingDimension);
+
+                difficultyCharts[key] = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['0k', '6k', '12k', '18k', '24k', '30k', '36k', '42k'],
+                        datasets: datasets.filter(d => d.label && !d.label.includes('Range'))
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 2,
+                        animation: {
+                            duration: 2500,
+                            easing: 'easeInOutQuart'
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: { boxWidth: 20, font: { size: 12 } }
+                            },
+                            title: {
+                                display: false
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: '#Training Trajectories',
+                                    font: { size: 14, weight: 'bold' }
+                                },
+                                grid: { display: true, color: 'rgba(0,0,0,0.1)' },
+                                ticks: { font: { size: 12 } }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Success Rate (%)',
+                                    font: { size: 14, weight: 'bold' }
+                                },
+                                grid: { display: true, color: 'rgba(0,0,0,0.1)' },
+                                ticks: { font: { size: 12 } }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function createDatasetsForDifficulty(cacheData, dataKey, colors, scalingDimension = 'breadth') {
+            const datasets = [];
+            // Filter plot order based on scaling dimension
+            const allCurves = ['uniform sampling', 'biased to hard', 'only easy', 'only medium', 'exclude domains', 'shorten horizon'];
+            const plotOrder = scalingDimensions[scalingDimension] || allCurves;
+            const refStart = dataKey === 'avg' ? 26.2 : null;
+
+            // Define custom labels for each scaling dimension
+            const labelMappings = {
+                'breadth': {
+                    'biased to hard': 'Full Task Set',
+                    'exclude domains': 'Half Task Set'
+                },
+                'size': {
+                    'biased to hard': 'Biased to Hard',
+                    'only easy': 'Only Easy',
+                    'only medium': 'Only Medium'
+                },
+                'depth': {
+                    'uniform sampling': 'Uniform Sampling (All Difficulties)',
+                    'only easy': 'Only Easy'
+                },
+                'horizon': {
+                    'shorten horizon': 'Short Horizon',
+                    'uniform sampling': 'Full Horizon'
+                }
+            };
+
+            const currentLabels = labelMappings[scalingDimension] || {};
+
+            for (const runName of plotOrder) {
+                const runData = cacheData[runName];
+                if (!runData) continue;
+
+                const dirsData = runData.dirs_data;
+                const shouldMerge = dirsData.length >= 2 && runName === 'biased to hard';
+                const displayLabel = currentLabels[runName] || runName;
+
+                if (shouldMerge) {
+                    const allSmoothed = [];
+                    for (const dirResult of dirsData) {
+                        let data = dirResult.ood[dataKey].slice(0, 8);
+                        if (refStart !== null && data.length > 0) data[0] = refStart;
+                        allSmoothed.push(applyEMA(data, 0.5));
+                    }
+
+                    if (allSmoothed.length >= 2) {
+                        const minLen = Math.min(...allSmoothed.map(d => d.length));
+                        const avgData = [];
+                        for (let i = 0; i < minLen; i++) {
+                            const values = allSmoothed.map(d => d[i]);
+                            avgData.push(values.reduce((a, b) => a + b, 0) / values.length);
+                        }
+
+                        datasets.push({
+                            label: displayLabel,
+                            data: avgData,
+                            borderColor: colors[runName],
+                            backgroundColor: colors[runName],
+                            borderWidth: 4,
+                            fill: false,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            tension: 0
+                        });
+                    }
+                } else if (dirsData.length > 0 && dirsData[0].ood) {
+                    let data = dirsData[0].ood[dataKey].slice(0, 8);
+                    if (refStart !== null && data.length > 0) data[0] = refStart;
+                    const smoothed = applyEMA(data, 0.5);
+
+                    datasets.push({
+                        label: displayLabel,
+                        data: smoothed,
+                        borderColor: colors[runName],
+                        backgroundColor: colors[runName],
+                        borderWidth: 4,
+                        fill: false,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        tension: 0
+                    });
+                }
+            }
+
+            return datasets;
+        }
+
+        // ============================================================
+        // FIXED Metric Chart Functions - Throughput Animation
+        // ============================================================
+        function initMetricCharts() {
+            // ============================================================
+            // FIXED: Throughput Chart - Two separate animated charts
+            // Key fixes:
+            // 1. Wait for flip transition to complete (650ms delay)
+            // 2. Use chart.data.datasets[0].data directly
+            // 3. Use update('none') to skip Chart.js animations
+            // 4. Proper cleanup on re-hover
+            // 5. Use actual performance curve data instead of linear
+            // ============================================================
+            const ctxThroughputNaive = document.getElementById('metric-chart-throughput-naive');
+            const ctxThroughputOurs = document.getElementById('metric-chart-throughput-ours');
+
+            // Performance curve data - will be loaded from ablation data
+            let performanceCurveData = null;
+
+            // Load performance curve from ablation data
+            fetch('website/data/ablation_by_difficulty_cache.json')
+                .then(response => response.json())
+                .then(data => {
+                    // Use "biased to hard" run, overall performance, smoothed data
+                    if (data['biased to hard'] && data['biased to hard'].dirs_data.length > 0) {
+                        const rawData = data['biased to hard'].dirs_data[0].ood.avg;
+                        // Apply EMA smoothing (α=0.5) to match the displayed curves
+                        performanceCurveData = applyEMA(rawData.slice(0, 20), 0.5);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading performance curve data:', error);
+                    // Fallback to linear if data fails to load
+                    performanceCurveData = Array.from({length: 20}, (_, i) => 26.2 + i * 0.8);
+                });
+
+            if (ctxThroughputNaive && ctxThroughputOurs) {
+                let naiveChart = null;
+                let ourChart = null;
+                let animationInterval = null;
+                let animationTimeout = null;
+
+                // Common chart options
+                const chartOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,  // Disable Chart.js built-in animations
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            display: false,
+                            min: 20,
+                            max: 50,
+                            beginAtZero: false
+                        },
+                        x: {
+                            display: false,
+                            min: 0,
+                            max: 19
+                        }
+                    },
+                    elements: {
+                        point: { radius: 0 },
+                        line: { tension: 0.3 }
+                    }
+                };
+
+                function cleanupAnimation() {
+                    if (animationTimeout) {
+                        clearTimeout(animationTimeout);
+                        animationTimeout = null;
+                    }
+                    if (animationInterval) {
+                        clearInterval(animationInterval);
+                        animationInterval = null;
+                    }
+                    if (naiveChart) {
+                        naiveChart.destroy();
+                        naiveChart = null;
+                    }
+                    if (ourChart) {
+                        ourChart.destroy();
+                        ourChart = null;
+                    }
+                }
+
+                function startAnimation() {
+                    // Clean up any previous animation
+                    cleanupAnimation();
+
+                    // Check if performance curve data is loaded
+                    if (!performanceCurveData) {
+                        console.warn('Performance curve data not loaded yet, using fallback');
+                        performanceCurveData = Array.from({length: 20}, (_, i) => 26.2 + i * 0.8);
+                    }
+
+                    // Wait for flip animation to complete (0.6s transition + buffer)
+                    animationTimeout = setTimeout(() => {
+                        const maxPoints = Math.min(20, performanceCurveData.length);
+
+                        // Create Naive chart with empty data
+                        naiveChart = new Chart(ctxThroughputNaive, {
+                            type: 'line',
+                            data: {
+                                labels: Array.from({length: maxPoints}, (_, i) => i),
+                                datasets: [{
+                                    data: [],
+                                    borderColor: '#999',
+                                    backgroundColor: 'transparent',
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0.3,
+                                    pointRadius: 0,
+                                    pointBackgroundColor: 'transparent'
+                                }]
+                            },
+                            options: chartOptions
+                        });
+
+                        // Create Our chart with empty data
+                        ourChart = new Chart(ctxThroughputOurs, {
+                            type: 'line',
+                            data: {
+                                labels: Array.from({length: maxPoints}, (_, i) => i),
+                                datasets: [{
+                                    data: [],
+                                    borderColor: '#3273dc',
+                                    backgroundColor: 'transparent',
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0.3,
+                                    pointRadius: 0,
+                                    pointBackgroundColor: 'transparent'
+                                }]
+                            },
+                            options: chartOptions
+                        });
+
+                        // Animation: add points progressively using actual performance curve
+                        let naiveIndex = 0;
+                        let ourIndex = 0;
+
+                        animationInterval = setInterval(() => {
+                            // Add 1 point to naive curve per iteration
+                            if (naiveIndex < maxPoints) {
+                                naiveChart.data.datasets[0].data.push({
+                                    x: naiveIndex,
+                                    y: performanceCurveData[naiveIndex]
+                                });
+                                naiveIndex++;
+                                naiveChart.update('none');
+                            }
+
+                            // Add 4 points to "ours" curve per iteration (4× faster)
+                            for (let i = 0; i < 4 && ourIndex < maxPoints; i++) {
+                                ourChart.data.datasets[0].data.push({
+                                    x: ourIndex,
+                                    y: performanceCurveData[ourIndex]
+                                });
+                                ourIndex++;
+                            }
+                            if (ourIndex <= maxPoints) {
+                                ourChart.update('none');
+                            }
+
+                            // Stop when both are complete
+                            if (naiveIndex >= maxPoints && ourIndex >= maxPoints) {
+                                clearInterval(animationInterval);
+                                animationInterval = null;
+                            }
+                        }, 200);
+
+                    }, 650);  // Wait for flip animation
+                }
+
+                // Trigger animation on hover
+                const throughputCard = document.getElementById('throughput-flip-card');
+                if (throughputCard) {
+                    throughputCard.addEventListener('mouseenter', startAnimation);
+                }
+            }
+
+            // Collection Rate Chart - Multiple trajectory paths diverging
+            const ctxCollection = document.getElementById('metric-chart-collection');
+            if (ctxCollection) {
+                const labels = Array(10).fill('');
+                const datasets = [];
+
+                // Create 12 trajectory lines diverging from a single point
+                const trajectoryPaths = [
+                    [0, 0.3, 0.8, 1.5, 2.2, 3, 4, 5, 6, 7],
+                    [0, 0.2, 0.6, 1.2, 1.8, 2.5, 3.3, 4.2, 5.2, 6.2],
+                    [0, 0.15, 0.4, 0.9, 1.4, 2, 2.7, 3.5, 4.4, 5.3],
+                    [0, 0.1, 0.3, 0.7, 1.1, 1.6, 2.2, 2.9, 3.7, 4.5],
+                    [0, 0.05, 0.15, 0.35, 0.6, 0.9, 1.3, 1.8, 2.4, 3],
+                    [0, 0, 0, 0, 0, 0, 0.3, 0.8, 1.5, 2.5],
+                    [0, -0.05, -0.15, -0.35, -0.6, -0.9, -1.3, -1.8, -2.4, -3],
+                    [0, -0.1, -0.3, -0.7, -1.1, -1.6, -2.2, -2.9, -3.7, -4.5],
+                    [0, -0.15, -0.4, -0.9, -1.4, -2, -2.7, -3.5, -4.4, -5.3],
+                    [0, -0.2, -0.6, -1.2, -1.8, -2.5, -3.3, -4.2, -5.2, -6.2],
+                    [0, -0.25, -0.7, -1.4, -2.1, -2.8, -3.7, -4.7, -5.8, -6.8],
+                    [0, -0.3, -0.8, -1.5, -2.2, -3, -4, -5, -6, -7]
+                ];
+
+                trajectoryPaths.forEach((path, index) => {
+                    datasets.push({
+                        label: `Trajectory ${index + 1}`,
+                        data: path,
+                        borderColor: '#3273dc',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.4,
+                        pointRadius: 0
+                    });
+                });
+
+                new Chart(ctxCollection, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: false },
+                            title: {
+                                display: true,
+                                text: '1,800 Trajectories / 30 min',
+                                font: { size: 13, weight: 'bold' }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                display: false
+                            },
+                            x: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Steps Chart - Wavy trajectory line with progressive animation
+            const ctxSteps = document.getElementById('metric-chart-steps');
+            if (ctxSteps) {
+                let stepsChart = null;
+                let stepsAnimationInterval = null;
+                let stepsAnimationTimeout = null;
+
+                // Trajectory data with gradually increasing variance - each point creates new max/min
+                const trajectoryData = [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6, 7];
+                const trajectoryLabels = Array(14).fill('');
+
+                function cleanupStepsAnimation() {
+                    if (stepsAnimationTimeout) {
+                        clearTimeout(stepsAnimationTimeout);
+                        stepsAnimationTimeout = null;
+                    }
+                    if (stepsAnimationInterval) {
+                        clearInterval(stepsAnimationInterval);
+                        stepsAnimationInterval = null;
+                    }
+                    if (stepsChart) {
+                        stepsChart.destroy();
+                        stepsChart = null;
+                    }
+                }
+
+                function startStepsAnimation() {
+                    cleanupStepsAnimation();
+
+                    // Wait for flip animation to complete
+                    stepsAnimationTimeout = setTimeout(() => {
+                        // Create chart with empty data
+                        stepsChart = new Chart(ctxSteps, {
+                            type: 'line',
+                            data: {
+                                labels: trajectoryLabels,
+                                datasets: [{
+                                    label: 'Trajectory',
+                                    data: [],
+                                    borderColor: '#3273dc',
+                                    backgroundColor: 'rgba(50, 115, 220, 0.1)',
+                                    borderWidth: 3,
+                                    fill: false,
+                                    tension: 0,
+                                    pointRadius: 4,
+                                    pointBackgroundColor: '#3273dc',
+                                    pointBorderColor: '#fff',
+                                    pointBorderWidth: 2
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: true,
+                                animation: false,
+                                plugins: {
+                                    legend: { display: false },
+                                    title: {
+                                        display: true,
+                                        text: 'Trajectory: 13.2 Steps',
+                                        font: { size: 13, weight: 'bold' }
+                                    }
+                                },
+                                scales: {
+                                    y: { display: false },
+                                    x: { display: false }
+                                }
+                            }
+                        });
+
+                        // Animation: add points progressively
+                        let currentIndex = 0;
+                        stepsAnimationInterval = setInterval(() => {
+                            if (currentIndex < trajectoryData.length) {
+                                stepsChart.data.datasets[0].data.push({
+                                    x: currentIndex,
+                                    y: trajectoryData[currentIndex]
+                                });
+                                currentIndex++;
+                                stepsChart.update('none');
+                            } else {
+                                clearInterval(stepsAnimationInterval);
+                                stepsAnimationInterval = null;
+                            }
+                        }, 150);
+
+                    }, 650);
+                }
+
+                // Trigger animation on hover
+                const stepsCard = document.getElementById('steps-flip-card');
+                if (stepsCard) {
+                    stepsCard.addEventListener('mouseenter', startStepsAnimation);
+                }
+            }
+
+            // Resources Display - Icons instead of chart
+            const resourcesContainer = document.getElementById('metric-chart-resources');
+            if (resourcesContainer) {
+                // Create 4 groups of 32 CPUs each (8 CPUs per row, 4 rows)
+                const cpuGroups = Array(4).fill(0).map(() =>
+                    '<div style="display: flex; flex-direction: column; gap: 1px;">' +
+                    Array(4).fill(0).map(() =>
+                        '<div style="display: flex; gap: 1px;">' +
+                        '<div style="width: 4px; height: 4px; background-color: #2ca02c; border-radius: 1px;"></div>'.repeat(8) +
+                        '</div>'
+                    ).join('') +
+                    '</div>'
+                ).join('');
+
+                // Create 3 groups of 8 GPUs each
+                const gpuGroups = Array(3).fill(0).map(() =>
+                    '<div style="display: flex; gap: 2px; justify-content: center;">' +
+                    '<div style="width: 8px; height: 8px; background-color: #ff7f0e; border-radius: 2px;"></div>'.repeat(8) +
+                    '</div>'
+                ).join('');
+
+                resourcesContainer.innerHTML = `
+                    <div style="text-align: center; width: 100%; padding: 5px;">
+                        <h5 style="font-size: 11px; font-weight: bold; margin-bottom: 8px;">Hardware Resources</h5>
+
+                        <!-- CPU Section: 32 × 4 = 128 -->
+                        <div style="margin-bottom: 10px;">
+                            <div style="font-size: 9px; font-weight: bold; color: #2ca02c; margin-bottom: 4px;">32 × 4 CPUs</div>
+                            <div style="display: flex; justify-content: center; gap: 4px;">
+                                ${cpuGroups}
+                            </div>
+                        </div>
+
+                        <!-- GPU Section: 8 × 3 = 24 -->
+                        <div>
+                            <div style="font-size: 9px; font-weight: bold; color: #ff7f0e; margin-bottom: 4px;">8 × 3 GPUs</div>
+                            <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 2px;">
+                                ${gpuGroups}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    </script>
+
+</body>
+
+</html>
