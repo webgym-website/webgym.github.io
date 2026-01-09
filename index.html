@@ -527,10 +527,10 @@
                         <div class="box mt-4">
                             <h4 class="title is-5">Key Features</h4>
                             <ul>
-                                <li><strong>Asynchronous Architecture:</strong> Decouples environment simulation from policy inference, allowing environments to run independently while batching policy queries</li>
-                                <li><strong>Efficient Batching:</strong> Batches policy forward passes across multiple concurrent environments to maximize GPU utilization</li>
-                                <li><strong>Scalable Design:</strong> Can collect 1,800 trajectories (avg. 13.2 steps) in 30 minutes using 128 CPUs and 24 H100 GPUs</li>
-                                <li><strong>Browser Pool Management:</strong> Manages a pool of browser instances to minimize startup overhead and maximize throughput</li>
+                                <li><strong>Asynchronous Architecture:</strong> Eliminates synchronized step and episode barriers that cause "burst-idle" behavior by streaming observations to GPUs as soon as they're available, keeping both CPUs and GPUs fully utilized throughout multi-step rollout generation</li>
+                                <li><strong>Server/Client Architecture:</strong> Server hosts simulation environments using master/worker paradigm on CPUs, while client hosts agent instances on GPUs, enabling easy horizontal and vertical scaling</li>
+                                <li><strong>4-5× Speedup:</strong> Achieves significant speedup compared to naive synchronized implementations, with greater gains under tighter CPU constraints (e.g., 48.6 minutes vs. 264 minutes with 64 CPUs for 1,800 trajectories)</li>
+                                <li><strong>Strong Scalability:</strong> Exhibits near-linear scaling with additional GPU nodes when sufficient CPU resources are provided, with throughput primarily bounded by GPU inference capacity</li>
                             </ul>
                         </div>
 
@@ -873,6 +873,26 @@
         </div>
     </section>
 
+
+    <!-- Conclusion Section -->
+    <section class="section" id="conclusion">
+        <div class="container is-max-desktop">
+            <div class="columns is-centered has-text-centered">
+                <div class="column is-four-fifths">
+                    <h2 class="title is-3">Conclusion</h2>
+                    <div class="content has-text-justified">
+                        <p>
+                            We presented WebGym, the largest open-source training environment for visual web agents with nearly 300,000 diverse tasks.
+                            By combining a high-throughput asynchronous rollout system with strategic scaling across task breadth, depth, and size,
+                            we demonstrated that simple reinforcement learning can significantly improve agent performance. Our trained agent achieves
+                            42.9% success rate on out-of-distribution websites, outperforming proprietary models and validating that scaling training
+                            environments leads to more generalizable web agents.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <section class="section" id="BibTeX">
         <div class="container is-max-desktop content">
